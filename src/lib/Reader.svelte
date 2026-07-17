@@ -3,6 +3,7 @@
   import * as api from './api';
   import type { Book, Timeline, TimelineWord, User } from './api';
   import { queueSettings } from './settings';
+  import { t } from './i18n.svelte';
 
   let {
     book,
@@ -25,9 +26,6 @@
   const words = timeline.words;
   const total = words.length;
 
-  // WPM is seeded from the account settings (CONTRACTS.md); localStorage is
-  // only a cache for the next cold boot, never the source of truth.
-  const WPM_KEY = 'flick.wpm';
   const clampWpm = (n: number) => Math.min(800, Math.max(150, Math.round(n / 25) * 25));
 
   // resume from server-side position; a finished book restarts from the top
@@ -41,7 +39,6 @@
   // svelte-ignore state_referenced_locally
   let lastWpm = wpm;
   $effect(() => {
-    localStorage.setItem(WPM_KEY, String(wpm));
     if (wpm !== lastWpm) {
       lastWpm = wpm;
       onWpm?.(wpm);
@@ -49,25 +46,31 @@
     }
   });
 
-  // ---- vsync-locked scheduler (per CONTRACTS.md: rAF accumulator, never setTimeout) ----
-  // Each frame adds its delta to `acc`; while `acc` covers the current word's
-  // duration (weight * 60000/wpm) we advance and subtract, carrying the
-  // remainder so pacing stays exact on 60/90/120 Hz displays. `duration` reads
-  // `wpm` live, so WPM changes apply immediately without touching `acc`.
+  // ---- vsync-locked scheduler (CONTRACTS.md: rAF accumulator, never setTimeout) ----
   let raf = 0;
   let last = 0;
   let acc = 0;
+
+  // ---- stats: words consumed by natural advance (not by seeking) ----
+  let consumed = 0; // since the last position report
+  let sessionWords = 0; // whole session
+  let activeMs = 0; // time actually playing
+  let sessionStart = 0; // epoch ms of the first play
 
   function duration(i: number): number {
     return words[i][2] * (60000 / wpm);
   }
 
   function frame(now: number) {
-    acc += now - last;
+    const delta = now - last;
+    acc += delta;
+    activeMs += delta;
     last = now;
     let dur = duration(index);
     while (acc >= dur) {
       acc -= dur;
+      consumed += 1;
+      sessionWords += 1;
       if (index + 1 >= total) {
         finish();
         return;
@@ -85,6 +88,7 @@
       acc = 0;
       finished = false;
     }
+    if (sessionStart === 0) sessionStart = Date.now();
     playing = true;
     last = performance.now();
     raf = requestAnimationFrame(frame);
@@ -109,19 +113,37 @@
     void savePosition();
   }
 
-  // ---- position sync: every 5s while playing, on pause, on exit ----
+  // ---- position + read-words sync: every 5s while playing, on pause, on exit ----
   // svelte-ignore state_referenced_locally
   let lastSent = book.position;
 
   async function savePosition() {
     const pos = finished ? total : index;
-    if (pos === lastSent) return;
+    const read = Math.min(consumed, 500);
+    if (pos === lastSent && read === 0) return;
     lastSent = pos;
+    consumed = 0;
     try {
-      await api.savePosition(book.id, pos);
+      await api.savePosition(book.id, pos, read, api.localDay());
     } catch {
       lastSent = -1; // retry on the next save
+      consumed += read;
     }
+  }
+
+  /** Running-app-style session summary, once per reader visit. */
+  function logSession() {
+    if (sessionStart === 0 || activeMs < 10_000 || sessionWords === 0) return;
+    const avg = Math.round(sessionWords / (activeMs / 60_000));
+    void api
+      .createSession({
+        book_id: book.id,
+        started_at: Math.floor(sessionStart / 1000),
+        duration_ms: Math.round(activeMs),
+        words: sessionWords,
+        avg_wpm: avg,
+      })
+      .catch(() => {});
   }
 
   // ---- sentence navigation (boundary = weight >= 2.0: sentence/paragraph enders) ----
@@ -144,7 +166,6 @@
 
   function back() {
     const start = sentenceStart(index);
-    // mid-sentence → snap to its start; at its start → previous sentence
     seek(index > start ? start : sentenceStart(start - 1));
   }
 
@@ -157,12 +178,14 @@
   function exit() {
     if (playing) pause();
     else void savePosition();
+    logSession();
+    sessionStart = 0;
     onExit();
   }
 
   function onKey(e: KeyboardEvent) {
-    const t = e.target as HTMLElement | null;
-    const onSlider = !!t && t.tagName === 'INPUT';
+    const target = e.target as HTMLElement | null;
+    const onSlider = !!target && target.tagName === 'INPUT';
     switch (e.key) {
       case ' ':
         e.preventDefault();
@@ -195,11 +218,11 @@
       cancelAnimationFrame(raf);
       clearInterval(tick);
       void savePosition();
+      logSession();
     };
   });
 
-  // ---- touch/click zones (contract): left third back a sentence, center
-  // third play/pause, right third forward — works on desktop clicks too.
+  // ---- touch/click zones: left third back a sentence, center play/pause, right forward ----
   function onStageClick(e: MouseEvent) {
     const el = e.currentTarget as HTMLElement;
     const x = e.clientX - el.getBoundingClientRect().left;
@@ -216,11 +239,9 @@
   const pivot = $derived(current[0].charAt(current[1]));
   const post = $derived(current[0].slice(current[1] + 1));
 
-  // ---- ORP-centred word fitting: the pivot column is optically centred, so
-  // the word's half-width is the longer of pre/post (+ pivot). Shrink the
-  // font for words that would overflow instead of ever wrapping.
+  // ORP-centred word fitting: shrink the font for words that would overflow.
   let stageW = $state(0);
-  const basePx = $derived(stageW > 0 && stageW < 420 ? 30 : stageW < 560 ? 36 : 40);
+  const basePx = $derived(stageW > 0 && stageW < 420 ? 30 : stageW < 560 ? 36 : 42);
   const fontPx = $derived.by(() => {
     if (stageW <= 0) return basePx;
     const halfChars = Math.max(pre.length, post.length) + 1;
@@ -236,38 +257,47 @@
 
 <svelte:window onkeydown={onKey} />
 
-<section class="panel reader-panel" aria-label="Reader">
-  <div class="panel-label">
-    <span class="lbl">Reader · {book.title}</span>
+<div class="wrap readerview">
+  <div class="rhead">
+    <button class="backbtn" type="button" onclick={exit}>← {t('library_link')}</button>
+    <span class="btitle">{book.title}</span>
     <span class="counter">{counter}</span>
   </div>
 
-  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-  <div class="stage" bind:clientWidth={stageW} onclick={onStageClick}>
-    <div class="rail top"></div>
-    <div class="rail bottom"></div>
-    <div class="notch top"></div>
-    <div class="notch bottom"></div>
-    <div class="word" style="font-size: {fontPx}px">
-      <span class="pre">{pre}</span><span class="orp">{pivot}</span><span class="post">{post}</span>
+  <section class="reader-panel" aria-label="Reader">
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+    <div class="stage" bind:clientWidth={stageW} onclick={onStageClick}>
+      <div class="rail top"></div>
+      <div class="rail bottom"></div>
+      <div class="notch top"></div>
+      <div class="notch bottom"></div>
+      <div class="word" style="font-size: {fontPx}px">
+        <span class="pre">{pre}</span><span class="orp">{pivot}</span><span class="post">{post}</span>
+      </div>
     </div>
-  </div>
 
-  <div class="progress"><div class="fill" style="width: {fillPct}%"></div></div>
+    <div class="progress"><div class="fill" style="width: {fillPct}%"></div></div>
 
-  <div class="controls">
-    <button class="btn" onclick={toggle}>
-      {playing ? 'Pause' : finished ? 'Replay' : 'Play'}
-    </button>
-    <div class="wpm-wrap">
-      <input type="range" min="150" max="800" step="25" bind:value={wpm} aria-label="Words per minute" />
-      <div class="wpm-val"><b>{wpm}</b> wpm</div>
+    <div class="controls">
+      <button class="btn" type="button" onclick={toggle}>
+        {playing ? t('pause') : finished ? t('replay') : t('play')}
+      </button>
+      <div class="wpm-wrap">
+        <input
+          type="range"
+          min="150"
+          max="800"
+          step="25"
+          bind:value={wpm}
+          aria-label="Words per minute"
+        />
+        <div class="wpm-val"><b>{wpm}</b> wpm</div>
+      </div>
     </div>
-  </div>
 
-  <div class="hint">
-    <span class="kbd-only"><b>space</b> play/pause · <b>←→</b> sentence · <b>esc</b> library</span>
-    <span class="touch-only">tap sides <b>◀▶</b> sentence · center play/pause</span>
-    <button class="linklike" type="button" onclick={exit}>library →</button>
-  </div>
-</section>
+    <div class="rhint">
+      <span class="kbd-only">{t('reader_hint_kbd')}</span>
+      <span class="touch-only">{t('reader_hint_touch')}</span>
+    </div>
+  </section>
+</div>

@@ -1,7 +1,8 @@
-// Debounced, queued persistence of user settings (wpm/theme) via PATCH
-// /api/auth/me. Changes made in quick succession are merged into one PATCH;
-// a failed PATCH re-queues the batch (newer values win) and retries once the
-// backoff elapses. UI never waits on this — settings apply locally first.
+// Debounced, queued persistence of user settings (wpm/theme/accent/lang) via
+// PATCH /api/auth/me. Changes made in quick succession are merged into one
+// PATCH; a failed PATCH re-queues the batch (newer values win) and retries
+// once the backoff elapses. UI never waits on this — settings apply locally
+// first.
 
 import * as api from './api';
 import type { Settings } from './api';
@@ -30,7 +31,7 @@ async function flush(): Promise<void> {
   }
   const batch = pending;
   pending = {};
-  if (batch.wpm === undefined && batch.theme === undefined) return;
+  if (Object.keys(batch).length === 0) return;
   inflight = true;
   try {
     await api.updateMe({ settings: batch });

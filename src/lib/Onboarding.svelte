@@ -1,37 +1,35 @@
 <script lang="ts">
+  // Intro for freshly registered accounts (guests never land here). Two
+  // steps — handle, speed — with a small but present SKIP (contract).
   import * as api from './api';
-  import type { Theme, User } from './api';
-  import { applyTheme } from './theme';
+  import type { User } from './api';
+  import { t } from './i18n.svelte';
   import { ONBOARD_DEMO_WORDS } from './demos';
   import RsvpDemo from './RsvpDemo.svelte';
 
   let {
     user,
     onDone,
-    onLogout,
   }: {
     user: User;
     onDone: (user: User) => void;
-    onLogout: () => void;
   } = $props();
 
-  const STEPS = ['USERNAME', 'SPEED', 'THEME'] as const;
   let step = $state(1);
   let busy = $state(false);
   let error = $state<string | null>(null);
 
-  // ---- step 1: username, prefilled from name or email local part ----
+  // ---- step 1: handle, prefilled from name or email local part ----
   function sanitize(s: string): string {
     return s.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 24);
   }
   // Mounted once per un-onboarded user — capturing the initial user is intentional.
   // svelte-ignore state_referenced_locally
-  let username = $state(sanitize(user.name) || sanitize(user.email.split('@')[0]));
+  let username = $state(sanitize(user.name) || sanitize(user.email?.split('@')[0] ?? ''));
 
   function usernameError(u: string): string | null {
-    if (u.length < 2) return 'too short — 2–24 chars';
-    if (u.length > 24) return 'too long — 2–24 chars';
-    if (!/^[a-zA-Z0-9_-]+$/.test(u)) return 'only a–z, 0–9, _ and -';
+    if (u.length < 2 || u.length > 24) return t('ob_handle_hint');
+    if (!/^[a-zA-Z0-9_-]+$/.test(u)) return t('ob_handle_hint');
     return null;
   }
   const nameErr = $derived(usernameError(username));
@@ -39,151 +37,102 @@
   // ---- step 2: speed, chosen against a live word-stream ----
   // svelte-ignore state_referenced_locally
   let wpm = $state(Math.min(800, Math.max(150, Math.round(user.settings.wpm / 25) * 25)));
-  function bump(delta: number) {
-    wpm = Math.min(800, Math.max(150, wpm + delta));
-  }
 
-  // ---- step 3: theme with instant live preview ----
-  const THEME_OPTIONS: Theme[] = ['auto', 'light', 'dark'];
-  // svelte-ignore state_referenced_locally
-  let theme = $state<Theme>(user.settings.theme);
-  function pick(t: Theme) {
-    theme = t;
-    applyTheme(t); // live preview — data-theme on the root, auto removes it
-  }
-
-  function back() {
+  async function finish(withProfile: boolean) {
     if (busy) return;
+    busy = true;
     error = null;
-    step = Math.max(1, step - 1);
+    try {
+      const updated = await api.updateMe(
+        withProfile ? { username, settings: { wpm }, onboarded: true } : { onboarded: true },
+      );
+      onDone(updated);
+    } catch (err) {
+      error = err instanceof Error ? err.message : t('err_generic');
+    } finally {
+      busy = false;
+    }
   }
 
-  async function next() {
+  function next() {
     if (busy) return;
     error = null;
     if (step === 1) {
       if (nameErr) return;
       step = 2;
-    } else if (step === 2) {
-      step = 3;
     } else {
-      // Finish: ONE PATCH with everything, then into the library.
-      busy = true;
-      try {
-        const updated = await api.updateMe({
-          username,
-          settings: { wpm, theme },
-          onboarded: true,
-        });
-        onDone(updated);
-      } catch (err) {
-        error = err instanceof Error ? err.message : 'request failed';
-      } finally {
-        busy = false;
-      }
+      void finish(true);
     }
   }
 
   function submit(e: SubmitEvent) {
     e.preventDefault();
-    void next();
+    next();
   }
 
   function autofocus(node: HTMLElement) {
     node.focus();
   }
-
-  // No Escape handler on purpose: onboarding cannot be skipped.
-  function onKey(e: KeyboardEvent) {
-    if (e.key !== 'Enter' || busy) return;
-    const t = e.target as HTMLElement | null;
-    // buttons already act on Enter; the step-1 form submits itself
-    if (t && (t.tagName === 'BUTTON' || t.tagName === 'INPUT')) return;
-    void next();
-  }
 </script>
 
-<svelte:window onkeydown={onKey} />
+<section class="onboard">
+  <div class="wrap">
+    <div class="step-k">{step} / 2</div>
 
-<section class="panel onboard" aria-label="First run setup">
-  <div class="panel-label">
-    <span class="lbl">First run</span>
-    <span class="counter">setup {step}/3</span>
-  </div>
-
-  <div class="boot-line">
-    [{step}/3] {STEPS[step - 1]}<span class="cursor">_</span>
-  </div>
-
-  {#if step === 1}
-    <form class="form" onsubmit={submit}>
-      <div class="field">
-        <label for="ob-username">Pick a handle</label>
-        <input
-          id="ob-username"
-          type="text"
-          bind:value={username}
-          spellcheck="false"
-          autocomplete="username"
-          use:autofocus
-        />
-        {#if nameErr && username.length > 0}
-          <div class="form-error">err — {nameErr}</div>
-        {/if}
-      </div>
-      <div class="ob-copy">shown in the header next to your stats · 2–24 chars · a–z 0–9 _ -</div>
-    </form>
-  {:else if step === 2}
-    <RsvpDemo words={ONBOARD_DEMO_WORDS} {wpm} />
-    <div class="controls">
-      <button class="btn ghost step-btn" type="button" onclick={() => bump(-25)} aria-label="Slower">−</button>
-      <div class="wpm-wrap">
-        <input type="range" min="150" max="800" step="25" bind:value={wpm} aria-label="Words per minute" />
-        <div class="wpm-val"><b>{wpm}</b> wpm</div>
-      </div>
-      <button class="btn ghost step-btn" type="button" onclick={() => bump(25)} aria-label="Faster">+</button>
-    </div>
-    <div class="ob-copy">speed up until it just barely breaks, then back off.</div>
-  {:else}
-    <div class="theme-grid" role="radiogroup" aria-label="Theme">
-      {#each THEME_OPTIONS as t (t)}
-        <button
-          class="theme-opt"
-          class:sel={theme === t}
-          type="button"
-          role="radio"
-          aria-checked={theme === t}
-          onclick={() => pick(t)}
-        >
-          {t}
-        </button>
-      {/each}
-    </div>
-    <div class="ob-copy">auto follows your system. changes apply instantly.</div>
-  {/if}
-
-  {#if error}
-    <div class="status err">err — {error}</div>
-  {/if}
-
-  <div class="ob-nav">
-    {#if step > 1}
-      <button class="btn ghost" type="button" onclick={back} disabled={busy}>← back</button>
+    {#if step === 1}
+      <h2>{t('ob_handle')}</h2>
+      <form onsubmit={submit}>
+        <div class="field">
+          <input
+            id="ob-username"
+            type="text"
+            bind:value={username}
+            spellcheck="false"
+            autocomplete="username"
+            aria-label={t('ob_handle')}
+            use:autofocus
+          />
+          <span class="fhint">{t('ob_handle_hint')}</span>
+        </div>
+      </form>
     {:else}
-      <span></span>
+      <h2>{wpm} wpm</h2>
+      <div class="demo">
+        <RsvpDemo words={ONBOARD_DEMO_WORDS} {wpm} />
+      </div>
+      <div class="controls" style="border: 1px solid var(--line); border-top: none">
+        <div class="wpm-wrap">
+          <input
+            type="range"
+            min="150"
+            max="800"
+            step="25"
+            bind:value={wpm}
+            aria-label="Words per minute"
+          />
+          <div class="wpm-val"><b>{wpm}</b> wpm</div>
+        </div>
+      </div>
+      <p class="fhint" style="color: var(--dim); font-size: 11px">{t('ob_speed_hint')}</p>
     {/if}
-    <button
-      class="btn"
-      type="button"
-      onclick={() => void next()}
-      disabled={busy || (step === 1 && !!nameErr)}
-    >
-      {step < 3 ? 'next →' : busy ? 'saving…' : 'finish →'}
-    </button>
-  </div>
 
-  <div class="hint">
-    <span><b>enter</b> next · no skipping</span>
-    <button class="linklike" type="button" onclick={onLogout}>logout →</button>
+    {#if error}
+      <div class="form-error" style="margin-top: 14px">{error}</div>
+    {/if}
+
+    <div class="obnav">
+      {#if step > 1}
+        <button class="linklike" type="button" onclick={() => (step = 1)} disabled={busy}>
+          ← {t('ob_back')}
+        </button>
+      {:else}
+        <button class="linklike" type="button" onclick={() => void finish(false)} disabled={busy}>
+          {t('ob_skip')}
+        </button>
+      {/if}
+      <button class="btn" type="button" onclick={next} disabled={busy || (step === 1 && !!nameErr)}>
+        {step === 1 ? `${t('ob_next')} →` : busy ? `${t('working')}…` : `${t('ob_finish')} →`}
+      </button>
+    </div>
   </div>
 </section>
