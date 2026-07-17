@@ -57,14 +57,23 @@
   let activeMs = 0; // time actually playing
   let sessionStart = 0; // epoch ms of the first play
 
+  // ---- WPM ramp (CONTRACTS v0.4 "car motor"): every play start eases from
+  // 60% to 100% of the target over the first 3s of active playback. Seeking
+  // keeps the ramp; pause→resume restarts it. The slider always shows target.
+  const RAMP_MS = 3000;
+  let rampMs = RAMP_MS;
+
   function duration(i: number): number {
-    return words[i][2] * (60000 / wpm);
+    const factor = Math.min(1, 0.6 + 0.4 * (rampMs / RAMP_MS));
+    const eff = Math.max(100, wpm * factor);
+    return words[i][2] * (60000 / eff);
   }
 
   function frame(now: number) {
     const delta = now - last;
     acc += delta;
     activeMs += delta;
+    rampMs = Math.min(RAMP_MS, rampMs + delta);
     last = now;
     let dur = duration(index);
     while (acc >= dur) {
@@ -89,6 +98,7 @@
       finished = false;
     }
     if (sessionStart === 0) sessionStart = Date.now();
+    rampMs = 0; // ease in from 60% on every (re)start
     playing = true;
     last = performance.now();
     raf = requestAnimationFrame(frame);
@@ -249,6 +259,9 @@
     return Math.max(14, Math.min(basePx, maxPx));
   });
 
+  // tick ruler under the slider — instrument-panel flavour, majors at 100s
+  const TICKS = Array.from({ length: (800 - 150) / 25 + 1 }, (_, i) => 150 + i * 25);
+
   const padLen = Math.max(3, String(total).length);
   const pad = (n: number) => String(n).padStart(padLen, '0');
   const counter = $derived(`${pad(total === 0 ? 0 : index + 1)} / ${pad(total)}`);
@@ -283,14 +296,21 @@
         {playing ? t('pause') : finished ? t('replay') : t('play')}
       </button>
       <div class="wpm-wrap">
-        <input
-          type="range"
-          min="150"
-          max="800"
-          step="25"
-          bind:value={wpm}
-          aria-label="Words per minute"
-        />
+        <div class="sliderbox">
+          <input
+            type="range"
+            min="150"
+            max="800"
+            step="25"
+            bind:value={wpm}
+            aria-label="Words per minute"
+          />
+          <div class="wpmticks" aria-hidden="true">
+            {#each TICKS as tick (tick)}
+              <i class:maj={tick % 100 === 0} class:on={tick === wpm}></i>
+            {/each}
+          </div>
+        </div>
         <div class="wpm-val"><b>{wpm}</b> wpm</div>
       </div>
     </div>

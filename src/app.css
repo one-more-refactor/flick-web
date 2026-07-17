@@ -212,6 +212,16 @@ header.top .wrap {
 .go:disabled { opacity: 0.5; cursor: default; }
 .go .ar { color: var(--accent); margin-left: 12px; transition: color var(--t-std); }
 .go:hover .ar { color: var(--bg); }
+.quickdrop {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  border: 1px dashed var(--line);
+  padding: 10px 22px;
+  transition: border-color 160ms, color 160ms;
+}
+.quickdrop:hover, .quickdrop.over { border-color: var(--accent); color: var(--ink); }
+
 .sub { font-size: 12px; color: var(--dim); }
 .sub .linklike, .sub a {
   color: var(--ink);
@@ -251,6 +261,9 @@ header.top .wrap {
 .plan .price .per { font-size: 12px; font-weight: 400; color: var(--dim); }
 .plan .feats { font-size: 11px; color: var(--dim); line-height: 1.8; margin-top: 10px; }
 .plan .pnote { font-size: 11px; color: var(--accent); margin-top: 14px; letter-spacing: 0.03em; }
+a.plan.contribute { display: block; text-decoration: none; color: inherit; transition: border-color 160ms, transform 160ms var(--ease); }
+a.plan.contribute:hover { border-color: var(--accent); transform: translateY(-2px); }
+a.plan.contribute .soon { border: none; font-size: 12px; padding: 0; }
 
 /* ---------- appearance bar (footer) ---------- */
 footer.app { border-top: 1px solid var(--line); }
@@ -529,6 +542,13 @@ input[type='range']::-moz-range-thumb {
 input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .wpm-val { font-size: 11px; color: var(--dim); min-width: 64px; text-align: right; }
 .wpm-val b { color: var(--accent); font-weight: 400; }
+
+/* instrument-panel tick ruler under the wpm slider */
+.sliderbox { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.wpmticks { display: flex; justify-content: space-between; align-items: flex-start; height: 8px; padding: 0 6px; }
+.wpmticks i { width: 1px; height: 4px; background: var(--line); transition: background 120ms, height 120ms; }
+.wpmticks i.maj { height: 7px; }
+.wpmticks i.on { background: var(--accent); height: 8px; width: 2px; }
 
 .rhint {
   display: flex;

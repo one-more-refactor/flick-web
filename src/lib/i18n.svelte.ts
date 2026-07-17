@@ -25,8 +25,16 @@ const DICT: Dict = {
   pick_one_up: { en: 'or pick one up', de: 'oder greif eins auf' },
   min: { en: 'min', de: 'Min' },
 
-  // plans
+  // landing quick-read
+  quick_read: { en: 'or drop your own file — start reading it now', de: 'oder leg deine eigene Datei ab — lies sofort los' },
+
+  // plans / contribute
   plans_promise: { en: "what's free stays free", de: 'was gratis ist, bleibt gratis' },
+  pro_love: { en: 'supports an indie open-source project', de: 'unterstützt ein Indie-Open-Source-Projekt' },
+  contribute_note: { en: 'self-hosted — everything free, forever', de: 'selbst gehostet — alles gratis, für immer' },
+  contribute_cta: { en: 'star · fork · PR', de: 'Stern · Fork · PR' },
+  uploads_left: { en: 'uploads left this week', de: 'Uploads übrig diese Woche' },
+  upload_limit_hit: { en: 'weekly upload limit reached — resets Monday', de: 'Wochen-Upload-Limit erreicht — Reset am Montag' },
   plans_soon: { en: 'SOON', de: 'BALD' },
   plans_free_feats: { en: 'reader · all themes · stats · streaks · every import · search', de: 'Reader · alle Themes · Statistik · Serien · alle Importe · Suche' },
   plans_free_books: { en: '100 books', de: '100 Bücher' },

@@ -3,6 +3,7 @@
   import type { Book, Lang, Timeline, User } from './lib/api';
   import { themeState, THEME_NAMES, THEME_SWATCH } from './lib/theme.svelte';
   import { i18n, t } from './lib/i18n.svelte';
+  import * as nav from './lib/nav';
   import Landing from './lib/Landing.svelte';
   import Auth from './lib/Auth.svelte';
   import Onboarding from './lib/Onboarding.svelte';
@@ -22,13 +23,21 @@
 
   let view = $state<View>({ name: 'boot' });
   let user = $state<User | null>(null);
+  let edition = $state<'selfhost' | 'hosted'>('selfhost');
   let starting = $state(false);
   let streakShow = $state<number | null>(null);
+
+  api
+    .meta()
+    .then((m) => (edition = m.edition))
+    .catch(() => {
+      // pre-v0.4 server — selfhost default keeps Pro surfaces hidden
+    });
 
   // Any 401 from a non-auth endpoint means the session is gone — back to the door.
   api.setUnauthorizedHandler(() => {
     user = null;
-    view = { name: 'landing' };
+    go({ name: 'landing' }, 'replace');
   });
 
   /** Adopt a user object: remember it and apply their settings app-wide. */
@@ -38,23 +47,78 @@
     i18n.adopt(u.settings.lang);
   }
 
-  function route(u: User) {
-    // guests never see onboarding; registered un-onboarded users go through it
-    view = u.guest || u.onboarded ? { name: 'library' } : { name: 'onboarding' };
+  // ---- view ⇄ URL sync (CONTRACTS v0.4: real URLs, working back button) ----
+
+  function routeFor(v: View): nav.Route {
+    switch (v.name) {
+      case 'reader':
+        return { name: 'read', id: v.book.id };
+      case 'stats':
+        return { name: 'stats' };
+      case 'auth':
+        return { name: 'auth' };
+      default:
+        return { name: 'home' };
+    }
   }
+
+  /** Switch view and record it in history ('push' for user navigation). */
+  function go(v: View, how: 'push' | 'replace' = 'push') {
+    view = v;
+    if (how === 'push') nav.push(routeFor(v));
+    else nav.replace(routeFor(v));
+  }
+
+  /** The view the URL asks for, given the current session. */
+  async function applyRoute(route: nav.Route) {
+    if (route.name === 'auth') {
+      view = { name: 'auth' };
+      return;
+    }
+    if (!user) {
+      view = { name: 'landing' };
+      return;
+    }
+    switch (route.name) {
+      case 'home':
+        view = user.guest || user.onboarded ? { name: 'library' } : { name: 'onboarding' };
+        break;
+      case 'stats':
+        view = { name: 'stats' };
+        break;
+      case 'read': {
+        if (view.name === 'reader' && view.book.id === route.id) return;
+        try {
+          const [book, timeline] = await Promise.all([
+            api.book(route.id),
+            api.timeline(route.id),
+          ]);
+          startReading(book, timeline);
+        } catch {
+          view = { name: 'library' };
+          nav.replace({ name: 'home' });
+        }
+        break;
+      }
+    }
+  }
+
+  nav.onPop((route) => void applyRoute(route));
 
   async function boot() {
     try {
-      const u = await api.me();
-      adopt(u);
-      route(u);
+      adopt(await api.me());
     } catch {
-      view = { name: 'landing' };
+      user = null;
     }
+    await applyRoute(nav.parsePath(location.pathname));
+    if (view.name === 'boot') view = user ? { name: 'library' } : { name: 'landing' };
   }
   boot();
 
-  /** Guest-first: "Start reading" needs no account — mint a guest session. */
+  // ---- guest-first entries ----
+
+  /** "Start reading" needs no account — mint a guest session lazily. */
   async function startGuest(): Promise<User | null> {
     if (user) return user;
     if (starting) return null;
@@ -72,7 +136,7 @@
 
   async function onStart() {
     const u = await startGuest();
-    if (u) view = { name: 'library' };
+    if (u) go({ name: 'library' });
   }
 
   /** Landing catalog pick: session (guest if needed) → add → straight into the reader. */
@@ -84,24 +148,40 @@
       const [fresh, tl] = await Promise.all([api.book(added.id), api.timeline(added.id)]);
       onRead(fresh, tl);
     } catch {
-      view = { name: 'library' }; // 409 = already there — the library shows it
+      go({ name: 'library' }); // 409 = already there — the library shows it
+    }
+  }
+
+  /** Landing quick-read: drop a file → guest → import → reader, one gesture. */
+  let quickErr = $state<string | null>(null);
+  async function onQuickFile(file: File) {
+    quickErr = null;
+    const u = await startGuest();
+    if (!u) return;
+    try {
+      const book = await api.createBookFromFile(file);
+      const tl = await api.timeline(book.id);
+      onRead(book, tl);
+    } catch (err) {
+      quickErr = err instanceof Error ? err.message : t('err_generic');
+      go({ name: 'library' });
     }
   }
 
   function onAuthed(u: User) {
     adopt(u);
-    route(u);
+    go(u.guest || u.onboarded ? { name: 'library' } : { name: 'onboarding' }, 'replace');
   }
 
   function onOnboarded(u: User) {
     adopt(u);
-    view = { name: 'library' };
+    go({ name: 'library' }, 'replace');
   }
 
   // ---- streak detection: words-before vs words-after a reading session ----
   let preWords = $state<number | null>(null);
 
-  function onRead(book: Book, timeline: Timeline) {
+  function startReading(book: Book, timeline: Timeline) {
     view = { name: 'reader', book, timeline };
     preWords = null;
     api
@@ -110,8 +190,13 @@
       .catch(() => {});
   }
 
+  function onRead(book: Book, timeline: Timeline) {
+    startReading(book, timeline);
+    nav.push({ name: 'read', id: book.id });
+  }
+
   function onExit() {
-    view = { name: 'library' };
+    go({ name: 'library' });
     const before = preWords;
     if (before === null) return;
     api
@@ -135,7 +220,7 @@
     user = null;
     themeState.detach();
     i18n.detach();
-    view = { name: 'landing' };
+    go({ name: 'landing' }, 'replace');
   }
 
   const LANGS: Lang[] = ['auto', 'en', 'de'];
@@ -153,7 +238,7 @@
         class="mark"
         type="button"
         onclick={() => {
-          if (user) view = { name: 'library' };
+          if (user) go({ name: 'library' });
         }}
         aria-label="flick"
       >FLICK<span class="cur">_</span></button>
@@ -163,13 +248,13 @@
           <span class="sw"><span class="kn"></span></span>
         </button>
         {#if user?.guest}
-          <button class="link" type="button" onclick={() => (view = { name: 'auth' })}>
+          <button class="link" type="button" onclick={() => go({ name: 'auth' })}>
             {t('save_account')}
           </button>
         {:else if user}
           <button class="link" type="button" onclick={onLogout}>{t('logout')}</button>
         {:else if view.name !== 'auth'}
-          <button class="link" type="button" onclick={() => (view = { name: 'auth' })}>
+          <button class="link" type="button" onclick={() => go({ name: 'auth' })}>
             {t('login')}
           </button>
         {/if}
@@ -185,22 +270,25 @@
             <div class="status">connecting<span class="cur">_</span></div>
           </div>
         {:else if view.name === 'landing'}
-          <Landing {onStart} onLogin={() => (view = { name: 'auth' })} {onPick} {starting} />
+          <Landing
+            {onStart}
+            onLogin={() => go({ name: 'auth' })}
+            {onPick}
+            {onQuickFile}
+            {edition}
+            {starting}
+            error={quickErr}
+          />
         {:else if view.name === 'auth'}
-          <Auth {onAuthed} onBack={() => (view = user ? { name: 'library' } : { name: 'landing' })} />
+          <Auth {onAuthed} onBack={() => go(user ? { name: 'library' } : { name: 'landing' })} />
         {:else if view.name === 'onboarding' && user}
           <Onboarding {user} onDone={onOnboarded} />
         {:else if view.name === 'library' && user}
-          <Library
-            {user}
-            {who}
-            {onRead}
-            onStats={() => (view = { name: 'stats' })}
-          />
+          <Library {user} {who} {edition} {onRead} onStats={() => go({ name: 'stats' })} />
         {:else if view.name === 'reader' && user}
           <Reader book={view.book} timeline={view.timeline} {user} {onExit} {onWpm} />
         {:else if view.name === 'stats' && user}
-          <Stats onBack={() => (view = { name: 'library' })} />
+          <Stats onBack={() => go({ name: 'library' })} />
         {/if}
       </div>
     {/key}

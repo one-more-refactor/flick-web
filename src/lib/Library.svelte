@@ -9,14 +9,23 @@
   let {
     user,
     who,
+    edition = 'selfhost',
     onRead,
     onStats,
   }: {
     user: User;
     who: string | null;
+    edition?: 'selfhost' | 'hosted';
     onRead: (book: Book, timeline: Timeline) => void;
     onStats: () => void;
   } = $props();
+
+  /** Weekly allowance line, only when the server enforces one (hosted+free). */
+  const allowance = $derived(
+    edition === 'hosted' && user.uploads && user.uploads.limit !== null
+      ? Math.max(0, user.uploads.limit - user.uploads.used)
+      : null,
+  );
 
   let books = $state<Book[]>([]);
   let stats = $state<Stats | null>(null);
@@ -304,7 +313,10 @@
     {#if busy}<div class="status" style="margin-top:12px">{busy}<span class="cur">_</span></div>{/if}
     {#if error}<div class="status err" style="margin-top:12px">{error}</div>{/if}
 
-    <div style="display:flex; justify-content:flex-end; margin-top:12px">
+    <div style="display:flex; justify-content:flex-end; align-items:baseline; gap:14px; margin-top:12px">
+      {#if allowance !== null && adding}
+        <span class="cap">{allowance} {t('uploads_left')}</span>
+      {/if}
       <button class="linklike" type="button" onclick={() => (adding = !adding)}>
         {adding ? `× ${t('close')}` : `+ ${t('add')}`}
       </button>

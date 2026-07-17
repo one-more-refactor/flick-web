@@ -15,6 +15,12 @@ export interface Settings {
   lang: Lang;
 }
 
+/** Weekly upload allowance; `limit: null` = unlimited (selfhost or pro). */
+export interface UploadStatus {
+  used: number;
+  limit: number | null;
+}
+
 export interface User {
   id: string;
   email: string | null; // null for guests
@@ -23,6 +29,13 @@ export interface User {
   guest: boolean;
   onboarded: boolean;
   settings: Settings;
+  /** Present from server v0.4 on. */
+  uploads?: UploadStatus;
+}
+
+export interface Meta {
+  edition: 'selfhost' | 'hosted';
+  version: string;
 }
 
 /** Any subset of the PATCH /api/auth/me body. */
@@ -99,9 +112,12 @@ export interface ReadingSession {
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  /** Machine-readable error code when the server sends one (e.g. "upload_limit"). */
+  code: string | null;
+  constructor(status: number, message: string, code: string | null = null) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -117,15 +133,19 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     if (res.status === 401 && !path.startsWith('/auth/')) onUnauthorized?.();
     let message = `${res.status} ${res.statusText}`;
+    let code: string | null = null;
     try {
       const body: unknown = await res.json();
       if (body && typeof body === 'object' && 'error' in body && typeof body.error === 'string') {
         message = body.error;
       }
+      if (body && typeof body === 'object' && 'code' in body && typeof body.code === 'string') {
+        code = body.code;
+      }
     } catch {
       // body was not JSON — keep the status line
     }
-    throw new ApiError(res.status, message);
+    throw new ApiError(res.status, message, code);
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
@@ -136,6 +156,9 @@ const json = (body: unknown, method = 'POST'): RequestInit => ({
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify(body),
 });
+
+/** Public server metadata — the client switches Pro/Contribute on `edition`. */
+export const meta = (): Promise<Meta> => request<Meta>('/meta');
 
 // ---------- auth ----------
 
