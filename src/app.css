@@ -239,6 +239,19 @@ header.top .wrap {
 .pick .a { font-size: 11px; color: var(--dim); margin-top: 5px; }
 .pick .m { font-size: 11px; color: var(--accent); margin-top: 14px; letter-spacing: 0.02em; }
 
+/* ---------- plans strip (landing) ---------- */
+.plans { border-top: 1px solid var(--line); padding: clamp(34px, 6vh, 64px) 0 clamp(48px, 8vh, 80px); }
+.plangrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 620px; margin: 0 auto; }
+@media (max-width: 560px) { .plangrid { grid-template-columns: 1fr; } }
+.plan { border: 1px solid var(--line); background: var(--panel); padding: 20px 20px 18px; }
+.plan.pro { border-color: var(--ink); }
+.plan .pk { font-size: 11px; letter-spacing: 0.22em; color: var(--dim); display: flex; align-items: baseline; gap: 10px; }
+.plan .soon { font-size: 9px; letter-spacing: 0.18em; color: var(--accent); border: 1px solid var(--accent); padding: 2px 6px; }
+.plan .price { font-size: 30px; font-weight: 700; margin-top: 12px; }
+.plan .price .per { font-size: 12px; font-weight: 400; color: var(--dim); }
+.plan .feats { font-size: 11px; color: var(--dim); line-height: 1.8; margin-top: 10px; }
+.plan .pnote { font-size: 11px; color: var(--accent); margin-top: 14px; letter-spacing: 0.03em; }
+
 /* ---------- appearance bar (footer) ---------- */
 footer.app { border-top: 1px solid var(--line); }
 footer.app .wrap {
@@ -400,6 +413,10 @@ footer.app .wrap {
 .addp .inner { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 .addp .phead { display: flex; justify-content: space-between; align-items: baseline; }
 .addp .phead .k { font-size: 10px; letter-spacing: 0.2em; color: var(--dim); }
+.urlrow { display: flex; gap: 10px; flex-wrap: wrap; }
+.urlrow input { flex: 1 1 180px; min-width: 0; }
+.urlrow .btn { flex: none; }
+
 .drop {
   display: flex;
   flex-direction: column;

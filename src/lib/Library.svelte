@@ -337,14 +337,8 @@
           <div class="or">{t('auth_or')}</div>
           <div class="field">
             <label for="add-url">{t('url_label')}</label>
-            <div style="display:flex; gap:10px">
-              <input
-                id="add-url"
-                type="url"
-                bind:value={importLink}
-                placeholder="https://…"
-                style="flex:1"
-              />
+            <div class="urlrow">
+              <input id="add-url" type="url" bind:value={importLink} placeholder="https://…" />
               <button class="btn" type="button" onclick={importFromUrl} disabled={!!busy || !importLink.trim()}>
                 {t('import_url')} →
               </button>

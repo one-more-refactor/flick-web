@@ -87,3 +87,22 @@
     </div>
   </section>
 {/if}
+
+<section class="plans">
+  <div class="wrap">
+    <div class="plangrid">
+      <div class="plan">
+        <div class="pk">FREE</div>
+        <div class="price">€0</div>
+        <div class="feats">{t('plans_free_feats')} · {t('plans_free_books')}</div>
+        <div class="pnote">{t('plans_promise')}</div>
+      </div>
+      <div class="plan pro">
+        <div class="pk">PRO <span class="soon">{t('plans_soon')}</span></div>
+        <div class="price">€4<span class="per">/{t('plans_mo')}</span></div>
+        <div class="feats">{t('plans_pro_feats')}</div>
+        <div class="pnote">{t('plans_yr')}</div>
+      </div>
+    </div>
+  </div>
+</section>

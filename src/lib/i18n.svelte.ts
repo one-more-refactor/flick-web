@@ -25,6 +25,15 @@ const DICT: Dict = {
   pick_one_up: { en: 'or pick one up', de: 'oder greif eins auf' },
   min: { en: 'min', de: 'Min' },
 
+  // plans
+  plans_promise: { en: "what's free stays free", de: 'was gratis ist, bleibt gratis' },
+  plans_soon: { en: 'SOON', de: 'BALD' },
+  plans_free_feats: { en: 'reader · all themes · stats · streaks · every import · search', de: 'Reader · alle Themes · Statistik · Serien · alle Importe · Suche' },
+  plans_free_books: { en: '100 books', de: '100 Bücher' },
+  plans_pro_feats: { en: 'unlimited shelf · cloud imports · auto-capture', de: 'unbegrenztes Regal · Cloud-Importe · Auto-Capture' },
+  plans_mo: { en: 'month', de: 'Monat' },
+  plans_yr: { en: 'or €36/year', de: 'oder 36 €/Jahr' },
+
   // auth
   auth_email: { en: 'Email', de: 'E-Mail' },
   auth_continue: { en: 'Continue', de: 'Weiter' },
