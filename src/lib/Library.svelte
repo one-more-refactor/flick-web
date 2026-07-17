@@ -1,13 +1,17 @@
 <script lang="ts">
   import * as api from './api';
-  import type { Book, Timeline } from './api';
+  import type { Book, Timeline, User } from './api';
 
   let {
+    user,
     onRead,
     onLogout,
+    onStats,
   }: {
+    user: User;
     onRead: (book: Book, timeline: Timeline) => void;
     onLogout: () => void;
+    onStats?: (totalWords: number) => void;
   } = $props();
 
   let books = $state<Book[]>([]);
@@ -23,6 +27,16 @@
   let fileInput: HTMLInputElement | undefined = $state();
 
   const totalWords = $derived(books.reduce((n, b) => n + b.word_count, 0));
+  const wordsRead = $derived(books.reduce((n, b) => n + Math.min(b.position, b.word_count), 0));
+  const donePct = $derived(totalWords > 0 ? Math.floor((wordsRead / totalWords) * 100) : 0);
+
+  const num = (n: number) => n.toLocaleString('en-US');
+  // retro odometer: fixed-width numerals with leading zeros
+  const odo = (n: number) => String(n).padStart(Math.max(6, String(totalWords).length), '0');
+
+  $effect(() => {
+    if (loaded) onStats?.(totalWords);
+  });
 
   function message(err: unknown): string {
     return err instanceof Error ? err.message : 'request failed';
@@ -47,6 +61,33 @@
   function pct(b: Book): string {
     const p = b.word_count > 0 ? Math.min(100, Math.floor((b.position / b.word_count) * 100)) : 0;
     return `${String(p).padStart(2, '0')}%`;
+  }
+
+  const SOURCE_TAG: Record<Book['source'], string> = { paste: 'TXT', pdf: 'PDF', intro: 'INTRO' };
+
+  const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  function added(b: Book): string {
+    // created_at is unix seconds; tolerate milliseconds just in case
+    const ms = b.created_at < 1e12 ? b.created_at * 1000 : b.created_at;
+    const d = new Date(ms);
+    if (Number.isNaN(d.getTime())) return '';
+    return `${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()]}`;
+  }
+
+  /** `~31 MIN LEFT` at the user's wpm, or DONE. */
+  function remaining(b: Book): string {
+    const left = Math.max(0, b.word_count - b.position);
+    if (left === 0) return 'DONE';
+    const wpm = Math.max(100, user.settings.wpm);
+    const min = Math.max(1, Math.round(left / wpm));
+    return `~${min} MIN LEFT`;
+  }
+
+  function meta(b: Book): string {
+    const parts = [`[${SOURCE_TAG[b.source]}]`, `${num(b.word_count)} WORDS`, remaining(b)];
+    const date = added(b);
+    if (date) parts.push(date);
+    return parts.join(' · ');
   }
 
   async function open(b: Book) {
@@ -197,13 +238,13 @@
 <section class="panel" aria-label="Library">
   <div class="panel-label">
     <span class="lbl">Library</span>
-    <span class="counter">{books.length} books · {totalWords} words</span>
+    <span class="counter">{books.length} books · {num(totalWords)} words</span>
   </div>
 
   {#if !loaded}
     <div class="status">loading<span class="cursor">_</span></div>
   {:else if books.length === 0}
-    <div class="status">library empty — press a to add a book</div>
+    <div class="status empty">no books. press a to add.</div>
   {:else}
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
     <ul class="lib">
@@ -218,14 +259,47 @@
             }
           }}
         >
-          <span class="idx">{String(i + 1).padStart(2, '0')}</span>
-          <span class="title">{b.title}</span>
-          <span class="leader"></span>
-          {#if confirming && i === sel}
-            <span class="del">delete? y/n</span>
-          {:else}
-            <span class="pct">{pct(b)}</span>
-          {/if}
+          <div class="row">
+            <span class="idx">{String(i + 1).padStart(2, '0')}</span>
+            <span class="title">{b.title}</span>
+            <span class="leader"></span>
+            {#if confirming && i === sel}
+              <span class="del">
+                delete?
+                <button
+                  class="linklike"
+                  type="button"
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    void doDelete();
+                  }}>y</button>
+                /
+                <button
+                  class="linklike"
+                  type="button"
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    confirming = false;
+                  }}>n</button>
+              </span>
+            {:else}
+              <span class="pct">{pct(b)}</span>
+            {/if}
+          </div>
+          <div class="row meta">
+            <span class="idx"></span>
+            <span class="info">{meta(b)}</span>
+            {#if i === sel && !confirming}
+              <button
+                class="rowdel"
+                type="button"
+                aria-label="Delete {b.title}"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  confirming = true;
+                }}>del</button>
+            {/if}
+          </div>
         </li>
       {/each}
     </ul>
@@ -239,10 +313,38 @@
   {/if}
 
   <div class="hint">
-    <span>↑↓ select · <b>enter</b> read · <b>a</b> add · <b>d</b> delete</span>
-    <button class="linklike" type="button" onclick={onLogout}>logout →</button>
+    <span class="kbd-only">↑↓ select · <b>enter</b> read · <b>a</b> add · <b>d</b> delete</span>
+    <span class="touch-only">tap select · tap again read</span>
+    <span class="hint-actions">
+      <button
+        class="linklike"
+        type="button"
+        onclick={() => {
+          adding = true;
+          error = null;
+        }}>+ add</button>
+      ·
+      <button class="linklike" type="button" onclick={onLogout}>logout →</button>
+    </span>
   </div>
 </section>
+
+{#if loaded && books.length > 0}
+  <section class="panel stats" aria-label="Reading stats">
+    <div class="stat">
+      <span class="k">words total</span>
+      <span class="v">{odo(totalWords)}</span>
+    </div>
+    <div class="stat">
+      <span class="k">words read</span>
+      <span class="v">{odo(wordsRead)}</span>
+    </div>
+    <div class="stat">
+      <span class="k">complete</span>
+      <span class="v">{String(donePct).padStart(3, '0')}%</span>
+    </div>
+  </section>
+{/if}
 
 {#if adding}
   <section
@@ -287,6 +389,17 @@
         />
       </div>
     </div>
-    <div class="hint"><span><b>esc</b> close</span></div>
+    <div class="hint">
+      <span class="kbd-only"><b>esc</b> close</span>
+      <button
+        class="linklike"
+        type="button"
+        onclick={() => {
+          if (!busy) {
+            adding = false;
+            error = null;
+          }
+        }}>close ✕</button>
+    </div>
   </section>
 {/if}

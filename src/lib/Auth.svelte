@@ -1,6 +1,8 @@
 <script lang="ts">
   import * as api from './api';
   import type { OidcProvider, User } from './api';
+  import { AUTH_DEMO_WORDS } from './demos';
+  import RsvpDemo from './RsvpDemo.svelte';
 
   let { onAuthed }: { onAuthed: (user: User) => void } = $props();
 
@@ -46,9 +48,15 @@
 </script>
 
 <section class="panel" aria-label="Account">
+  <!-- the first thing a visitor sees is the product working -->
+  <div class="demo-strip">
+    <RsvpDemo words={AUTH_DEMO_WORDS} wpm={700} compact loopPauseMs={1600} />
+    <div class="tagline">read at 700 wpm. one word at a time.</div>
+  </div>
+
   <div class="panel-label">
     <span class="lbl">{mode === 'login' ? 'Sign in' : 'Register'}</span>
-    <span class="counter">v0.1</span>
+    <span class="counter">v0.2</span>
   </div>
 
   <form class="form" onsubmit={submit}>

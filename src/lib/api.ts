@@ -1,19 +1,38 @@
 // flick web — typed API client. The shape of everything here is bound by
 // docs/CONTRACTS.md; change that file first, this one second.
 
+export type Theme = 'auto' | 'light' | 'dark';
+
+export interface Settings {
+  wpm: number;
+  theme: Theme;
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
+  username: string | null;
+  onboarded: boolean;
+  settings: Settings;
+}
+
+/** Any subset of the PATCH /api/auth/me body. */
+export interface UserPatch {
+  username?: string;
+  name?: string;
+  onboarded?: boolean;
+  settings?: Partial<Settings>;
 }
 
 export interface Book {
   id: string;
   title: string;
-  source: 'paste' | 'pdf';
+  source: 'paste' | 'pdf' | 'intro';
   word_count: number;
   position: number;
-  created_at: string;
+  /** Unix timestamp in seconds (as served by flick-server). */
+  created_at: number;
 }
 
 /** `[text, orp_index, weight]` — array-of-arrays keeps payloads small. */
@@ -85,6 +104,9 @@ export const login = (email: string, password: string): Promise<User> =>
 export const logout = (): Promise<void> => request<void>('/auth/logout', { method: 'POST' });
 
 export const me = (): Promise<User> => request<User>('/auth/me');
+
+export const updateMe = (patch: UserPatch): Promise<User> =>
+  request<User>('/auth/me', json(patch, 'PATCH'));
 
 export const providers = (): Promise<Providers> => request<Providers>('/auth/providers');
 

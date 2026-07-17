@@ -1,16 +1,22 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import * as api from './api';
-  import type { Book, Timeline, TimelineWord } from './api';
+  import type { Book, Timeline, TimelineWord, User } from './api';
+  import { queueSettings } from './settings';
 
   let {
     book,
     timeline,
+    user,
     onExit,
+    onWpm,
   }: {
     book: Book;
     timeline: Timeline;
+    user: User;
     onExit: () => void;
+    /** Reports WPM changes upward so the in-memory user stays in sync. */
+    onWpm?: (wpm: number) => void;
   } = $props();
 
   // The reader is mounted fresh per book (App keys the view), so capturing the
@@ -19,22 +25,28 @@
   const words = timeline.words;
   const total = words.length;
 
+  // WPM is seeded from the account settings (CONTRACTS.md); localStorage is
+  // only a cache for the next cold boot, never the source of truth.
   const WPM_KEY = 'flick.wpm';
-  function loadWpm(): number {
-    const raw = Number(localStorage.getItem(WPM_KEY));
-    if (!Number.isFinite(raw)) return 350;
-    return Math.min(800, Math.max(150, Math.round(raw / 25) * 25));
-  }
+  const clampWpm = (n: number) => Math.min(800, Math.max(150, Math.round(n / 25) * 25));
 
   // resume from server-side position; a finished book restarts from the top
   // svelte-ignore state_referenced_locally
   let index = $state(book.position >= total ? 0 : Math.max(0, book.position));
   let playing = $state(false);
   let finished = $state(false);
-  let wpm = $state(loadWpm());
+  // svelte-ignore state_referenced_locally
+  let wpm = $state(clampWpm(user.settings.wpm));
 
+  // svelte-ignore state_referenced_locally
+  let lastWpm = wpm;
   $effect(() => {
     localStorage.setItem(WPM_KEY, String(wpm));
+    if (wpm !== lastWpm) {
+      lastWpm = wpm;
+      onWpm?.(wpm);
+      queueSettings({ wpm }); // debounced PATCH — speed follows the account
+    }
   });
 
   // ---- vsync-locked scheduler (per CONTRACTS.md: rAF accumulator, never setTimeout) ----
@@ -186,12 +198,35 @@
     };
   });
 
+  // ---- touch/click zones (contract): left third back a sentence, center
+  // third play/pause, right third forward — works on desktop clicks too.
+  function onStageClick(e: MouseEvent) {
+    const el = e.currentTarget as HTMLElement;
+    const x = e.clientX - el.getBoundingClientRect().left;
+    const third = el.clientWidth / 3;
+    if (x < third) back();
+    else if (x > third * 2) forward();
+    else toggle();
+  }
+
   // ---- display ----
   const fallback: TimelineWord = ['', 0, 1];
   const current = $derived(words[index] ?? fallback);
   const pre = $derived(current[0].slice(0, current[1]));
   const pivot = $derived(current[0].charAt(current[1]));
   const post = $derived(current[0].slice(current[1] + 1));
+
+  // ---- ORP-centred word fitting: the pivot column is optically centred, so
+  // the word's half-width is the longer of pre/post (+ pivot). Shrink the
+  // font for words that would overflow instead of ever wrapping.
+  let stageW = $state(0);
+  const basePx = $derived(stageW > 0 && stageW < 420 ? 30 : stageW < 560 ? 36 : 40);
+  const fontPx = $derived.by(() => {
+    if (stageW <= 0) return basePx;
+    const halfChars = Math.max(pre.length, post.length) + 1;
+    const maxPx = (stageW / 2 - 14) / (halfChars * 0.62); // mono glyph ≈ 0.62em wide
+    return Math.max(14, Math.min(basePx, maxPx));
+  });
 
   const padLen = Math.max(3, String(total).length);
   const pad = (n: number) => String(n).padStart(padLen, '0');
@@ -201,18 +236,19 @@
 
 <svelte:window onkeydown={onKey} />
 
-<section class="panel" aria-label="Reader">
+<section class="panel reader-panel" aria-label="Reader">
   <div class="panel-label">
     <span class="lbl">Reader · {book.title}</span>
     <span class="counter">{counter}</span>
   </div>
 
-  <div class="stage">
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+  <div class="stage" bind:clientWidth={stageW} onclick={onStageClick}>
     <div class="rail top"></div>
     <div class="rail bottom"></div>
     <div class="notch top"></div>
     <div class="notch bottom"></div>
-    <div class="word">
+    <div class="word" style="font-size: {fontPx}px">
       <span class="pre">{pre}</span><span class="orp">{pivot}</span><span class="post">{post}</span>
     </div>
   </div>
@@ -230,6 +266,8 @@
   </div>
 
   <div class="hint">
-    <span><b>space</b> play/pause · <b>←→</b> sentence · <b>esc</b> library</span>
+    <span class="kbd-only"><b>space</b> play/pause · <b>←→</b> sentence · <b>esc</b> library</span>
+    <span class="touch-only">tap sides <b>◀▶</b> sentence · center play/pause</span>
+    <button class="linklike" type="button" onclick={exit}>library →</button>
   </div>
 </section>
