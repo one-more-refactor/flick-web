@@ -70,7 +70,9 @@
   }
 
   function frame(now: number) {
-    const delta = now - last;
+    // Clamp the frame delta: jank or a background tab must never fast-forward
+    // the reader through words the eye never saw (consistency, engine v2).
+    const delta = Math.min(now - last, 250);
     acc += delta;
     activeMs += delta;
     rampMs = Math.min(RAMP_MS, rampMs + delta);
@@ -269,6 +271,12 @@
 </script>
 
 <svelte:window onkeydown={onKey} />
+<svelte:document
+  onvisibilitychange={() => {
+    // A hidden tab pauses cleanly instead of silently burning words.
+    if (document.hidden) pause();
+  }}
+/>
 
 <div class="wrap readerview">
   <div class="rhead">
