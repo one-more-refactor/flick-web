@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import * as api from './lib/api';
   import type { Book, Lang, Timeline, User } from './lib/api';
+  import { REPO } from './lib/consts';
   import { themeState, THEME_NAMES, THEME_SWATCH } from './lib/theme.svelte';
   import { i18n, t } from './lib/i18n.svelte';
   import * as nav from './lib/nav';
@@ -139,7 +141,8 @@
     if (u) go({ name: 'library' });
   }
 
-  /** Landing catalog pick: session (guest if needed) → add → straight into the reader. */
+  /** Landing catalog pick: session (guest if needed) → open the pre-seeded
+   *  copy (409 carries its id, contract v0.4.1) or add-then-open. */
   async function onPick(slug: string) {
     const u = await startGuest();
     if (!u) return;
@@ -147,8 +150,17 @@
       const added = await api.catalogAdd(slug);
       const [fresh, tl] = await Promise.all([api.book(added.id), api.timeline(added.id)]);
       onRead(fresh, tl);
-    } catch {
-      go({ name: 'library' }); // 409 = already there — the library shows it
+    } catch (err) {
+      if (err instanceof api.ApiError && err.status === 409 && err.bookId) {
+        try {
+          const [fresh, tl] = await Promise.all([api.book(err.bookId), api.timeline(err.bookId)]);
+          onRead(fresh, tl);
+          return;
+        } catch {
+          // fall through to the library
+        }
+      }
+      go({ name: 'library' });
     }
   }
 
@@ -229,6 +241,26 @@
     user ? (user.username ?? (user.guest ? t('guest') : (user.name || user.email))) : null,
   );
   const inReader = $derived(view.name === 'reader');
+
+  // ---- flip cube: a quarter-turn forward per flick; the visible face always
+  // matches the resolved mode (re-syncs if the system theme flips it).
+  let spin = $state(themeState.resolved === 'dark' ? 1 : 0);
+  $effect(() => {
+    const dark = themeState.resolved === 'dark';
+    untrack(() => {
+      if (spin % 2 === 1 !== dark) spin += 1;
+    });
+  });
+
+  /** Top-bar GO PREMIUM (hosted only): land on the plans strip. */
+  function goPremium() {
+    if (view.name !== 'landing') go({ name: 'landing' });
+    setTimeout(
+      () =>
+        document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      60,
+    );
+  }
 </script>
 
 <div class="page">
@@ -243,19 +275,38 @@
         aria-label="flick"
       >FLICK<span class="cur">_</span></button>
       <div class="navr">
-        <button class="flick" type="button" onclick={() => themeState.flick()} title="light / dark">
-          <span class="fl">{themeState.resolved === 'dark' ? 'DARK' : 'LIGHT'}</span>
-          <span class="sw"><span class="kn"></span></span>
+        <a class="link brk" href={REPO} target="_blank" rel="noopener">GITHUB<span class="x">↗</span></a>
+        {#if edition === 'hosted'}
+          <button class="link brk premium" type="button" onclick={goPremium}>
+            {t('go_premium')}
+          </button>
+        {/if}
+        <button
+          class="cube"
+          type="button"
+          onclick={() => themeState.flick()}
+          title="light / dark"
+          aria-label="light / dark"
+        >
+          <span class="cubebox" style="--spin:{spin}">
+            <span class="face f0" aria-hidden="true">LIGHT</span>
+            <span class="face f1" aria-hidden="true">DARK</span>
+            <span class="face f2" aria-hidden="true">LIGHT</span>
+            <span class="face f3" aria-hidden="true">DARK</span>
+          </span>
         </button>
         {#if user?.guest}
-          <button class="link" type="button" onclick={() => go({ name: 'auth' })}>
-            {t('save_account')}
+          <button class="acct" type="button" onclick={() => go({ name: 'auth' })}>
+            {t('create_account')}
           </button>
         {:else if user}
           <button class="link" type="button" onclick={onLogout}>{t('logout')}</button>
         {:else if view.name !== 'auth'}
-          <button class="link" type="button" onclick={() => go({ name: 'auth' })}>
+          <button class="link loginlink" type="button" onclick={() => go({ name: 'auth' })}>
             {t('login')}
+          </button>
+          <button class="acct" type="button" onclick={() => go({ name: 'auth' })}>
+            {t('create_account')}
           </button>
         {/if}
       </div>

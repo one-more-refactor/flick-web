@@ -277,7 +277,7 @@
         <div class="empty">— {query} —</div>
       {:else}
         {#each results ?? rest as b, i (b.id)}
-          <div class="rowbook">
+          <div class="rowbook" class:arm={confirming === b.id}>
             <button
               class="no"
               type="button"
@@ -290,7 +290,7 @@
               <div class="d">{desc(b)}</div>
             </button>
             {#if confirming === b.id}
-              <span class="rdel" style="color: var(--accent)">
+              <span class="armq">
                 {t('delete_q')}
                 <button class="linklike" type="button" onclick={() => doDelete(b.id)}><b>y</b></button>
                 /

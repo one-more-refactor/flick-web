@@ -27,7 +27,7 @@
     error?: string | null;
   } = $props();
 
-  const REPO = 'https://github.com/one-more-refactor/flick';
+  import { REPO } from './consts';
 
   let picks = $state<CatalogEntry[]>([]);
   let picking = $state<string | null>(null);
@@ -134,7 +134,7 @@
   </section>
 {/if}
 
-<section class="plans">
+<section class="plans" id="plans">
   <div class="wrap">
     <div class="plangrid">
       <div class="plan">

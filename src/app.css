@@ -133,6 +133,9 @@ header.top .wrap {
   justify-content: space-between;
   padding-top: 20px;
   padding-bottom: 20px;
+  /* the full top bar (github/premium/cube/login/create) needs more room
+     than the reading column */
+  max-width: 1060px;
 }
 .mark { font-size: 15px; font-weight: 700; letter-spacing: 0.22em; }
 .mark .cur { color: var(--accent); animation: blink 1.15s steps(1) infinite; }
@@ -149,28 +152,87 @@ header.top .wrap {
 .link b { color: var(--accent); font-weight: 400; }
 .link:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* flicker — the light/dark switch */
-.flick { display: inline-flex; align-items: center; gap: 9px; }
-.flick .sw {
-  width: 40px;
-  height: 22px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  position: relative;
-  transition: border-color var(--t-flick);
-}
-.flick .kn {
+/* top-bar nav language: uppercase, bracket hovers */
+.navr .link { text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
+.brk { position: relative; white-space: nowrap; }
+.brk::before,
+.brk::after {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--accent);
-  transition: transform var(--t-flick) var(--ease), background var(--t-flick) var(--ease);
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 160ms, transform 220ms var(--ease);
 }
-:root[data-mode='dark'] .flick .kn { transform: translateX(18px); }
-.flick .fl { font-size: 10px; letter-spacing: 0.16em; color: var(--dim); width: 34px; text-align: left; }
+.brk::before { content: '['; left: -9px; transform: translateX(4px); }
+.brk::after { content: ']'; right: -9px; transform: translateX(-4px); }
+.brk:hover::before, .brk:hover::after { opacity: 1; transform: none; }
+.brk .x { color: var(--dim); margin-left: 3px; font-size: 10px; transition: color 160ms; }
+.brk:hover .x { color: var(--accent); }
+.premium { color: var(--accent); }
+.premium:hover { color: var(--ink); }
+
+/* create account — accent block slides in behind the label (flat, no fades) */
+.acct {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  padding: 8px 13px;
+  border: 1px solid var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  transition: color 200ms var(--ease), border-color 200ms var(--ease);
+}
+.acct::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--accent);
+  transform: translateX(-101%);
+  transition: transform 240ms var(--ease);
+}
+.acct:hover, .acct:focus-visible { color: var(--bg); border-color: var(--accent); }
+.acct:hover::before, .acct:focus-visible::before { transform: none; }
+
+/* flip cube — the light/dark switch: a quarter-turn forward per flick */
+.cube { perspective: 420px; display: inline-block; }
+.cubebox {
+  position: relative;
+  display: block;
+  width: 52px;
+  height: 22px;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--spin, 0) * -90deg));
+  transition: transform 520ms var(--ease);
+}
+.cube:hover .cubebox { transform: rotateX(calc(var(--spin, 0) * -90deg)) rotateY(-16deg); }
+.cube .face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  border: 1px solid var(--line);
+}
+.cube .face::after { content: '_'; color: var(--accent); animation: blink 1.15s steps(1) infinite; }
+.cube .f0, .cube .f2 { background: #f2efe8; color: #171310; }
+.cube .f1, .cube .f3 { background: #131110; color: #ece7dd; }
+.cube .f0 { transform: rotateX(0deg) translateZ(11px); }
+.cube .f1 { transform: rotateX(90deg) translateZ(11px); }
+.cube .f2 { transform: rotateX(180deg) translateZ(11px); }
+.cube .f3 { transform: rotateX(270deg) translateZ(11px); }
+@media (prefers-reduced-motion: reduce) {
+  .cubebox, .acct::before { transition: none; }
+}
+@media (max-width: 600px) {
+  .navr { gap: 12px; }
+  .loginlink, .premium { display: none; }
+}
 
 /* ---------- landing hero ---------- */
 .hero { padding: clamp(48px, 9vh, 104px) 0 clamp(40px, 7vh, 80px); text-align: center; }
@@ -408,8 +470,37 @@ footer.app .wrap {
 .rowbook .t { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color 140ms; }
 .rowbook .d { font-size: 11px; color: var(--dim); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rowbook .pct { font-size: 12px; color: var(--accent); flex: none; }
-.rowbook .rdel { font-size: 11px; color: var(--dim); flex: none; letter-spacing: 0.06em; padding: 4px 6px; }
-.rowbook .rdel:hover { color: var(--accent); }
+.rowbook .rdel {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--dim);
+  border: 1px solid transparent;
+  transition: transform 300ms var(--ease), background 160ms, color 160ms, border-color 160ms;
+}
+.rowbook .rdel:hover {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: rotate(180deg);
+}
+/* armed: the whole row carries the delete state — blinking accent outline,
+   tinted ground, struck title, y/n inline */
+.rowbook.arm {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  animation: armblink 1.1s steps(1) infinite;
+}
+.rowbook.arm .t { color: var(--accent); text-decoration: line-through; }
+.rowbook.arm .d { color: color-mix(in srgb, var(--accent) 60%, var(--dim)); }
+.armq { flex: none; display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: var(--accent); }
+.armq .linklike b { color: var(--accent); }
+@keyframes armblink { 50% { outline-color: transparent; } }
 .list .empty { padding: 34px 18px; text-align: center; font-size: 12px; color: var(--dim); letter-spacing: 0.08em; }
 
 .statsrow { display: flex; gap: 40px; margin-top: 26px; padding: 22px 4px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
@@ -675,5 +766,6 @@ input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-of
   .btn { padding: 13px 20px; }
 }
 @media (pointer: coarse) {
-  .linklike, .rdel { padding: 10px 6px; margin: -10px -6px; }
+  .linklike { padding: 10px 6px; margin: -10px -6px; }
+  .rowbook .rdel { width: 34px; height: 34px; margin: -4px 0; }
 }

@@ -17,6 +17,8 @@ const DICT: Dict = {
   language: { en: 'Language', de: 'Sprache' },
   guest: { en: 'guest', de: 'Gast' },
   save_account: { en: 'save your reading — create an account', de: 'Fortschritt sichern — Konto erstellen' },
+  create_account: { en: 'Create account', de: 'Konto erstellen' },
+  go_premium: { en: 'Go Premium', de: 'Premium holen' },
 
   // landing
   start_reading: { en: 'Start reading', de: 'Loslesen' },

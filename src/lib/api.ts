@@ -114,10 +114,13 @@ export class ApiError extends Error {
   status: number;
   /** Machine-readable error code when the server sends one (e.g. "upload_limit"). */
   code: string | null;
-  constructor(status: number, message: string, code: string | null = null) {
+  /** Existing book id on a 409 catalog add (libraries are pre-seeded, contract v0.4.1). */
+  bookId: string | null;
+  constructor(status: number, message: string, code: string | null = null, bookId: string | null = null) {
     super(message);
     this.status = status;
     this.code = code;
+    this.bookId = bookId;
   }
 }
 
@@ -134,6 +137,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (res.status === 401 && !path.startsWith('/auth/')) onUnauthorized?.();
     let message = `${res.status} ${res.statusText}`;
     let code: string | null = null;
+    let bookId: string | null = null;
     try {
       const body: unknown = await res.json();
       if (body && typeof body === 'object' && 'error' in body && typeof body.error === 'string') {
@@ -142,10 +146,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       if (body && typeof body === 'object' && 'code' in body && typeof body.code === 'string') {
         code = body.code;
       }
+      if (body && typeof body === 'object' && 'book_id' in body && typeof body.book_id === 'string') {
+        bookId = body.book_id;
+      }
     } catch {
       // body was not JSON — keep the status line
     }
-    throw new ApiError(res.status, message, code);
+    throw new ApiError(res.status, message, code, bookId);
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
