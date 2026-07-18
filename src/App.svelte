@@ -252,6 +252,17 @@
     });
   });
 
+  // ---- theme picker popover (moved out of the footer, v0.4.2)
+  let themesOpen = $state(false);
+
+  function onWindowClick(e: MouseEvent) {
+    if (themesOpen && !(e.target as Element | null)?.closest('.thpick')) themesOpen = false;
+  }
+
+  function onWindowKey(e: KeyboardEvent) {
+    if (e.key === 'Escape') themesOpen = false;
+  }
+
   /** Top-bar GO PREMIUM (hosted only): land on the plans strip. */
   function goPremium() {
     if (view.name !== 'landing') go({ name: 'landing' });
@@ -281,6 +292,36 @@
             {t('go_premium')}
           </button>
         {/if}
+        <div class="thpick">
+          <button
+            class="thbtn"
+            type="button"
+            onclick={() => (themesOpen = !themesOpen)}
+            aria-expanded={themesOpen}
+            aria-label={t('theme')}
+            title={t('theme')}
+          >
+            <span class="swd" style="--c:{THEME_SWATCH[themeState.theme]}"></span>
+            <span class="thname">{themeState.theme.toUpperCase()}</span>
+          </button>
+          {#if themesOpen}
+            <div class="thpanel">
+              {#each THEME_NAMES as th (th)}
+                <button
+                  class="throw"
+                  class:on={themeState.theme === th}
+                  type="button"
+                  onclick={() => {
+                    themeState.setTheme(th);
+                    themesOpen = false;
+                  }}
+                >
+                  <span class="swd" style="--c:{THEME_SWATCH[th]}"></span>{th.toUpperCase()}
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
         <button
           class="cube"
           type="button"
@@ -360,21 +401,6 @@
     <footer class="app">
       <div class="wrap">
         <div class="appgrp">
-          <span class="cap">{t('theme')}</span>
-          <div class="themes">
-            {#each THEME_NAMES as th (th)}
-              <button
-                class="th"
-                class:on={themeState.theme === th}
-                type="button"
-                onclick={() => themeState.setTheme(th)}
-              >
-                <span class="swd" style="--c:{THEME_SWATCH[th]}"></span>{th.toUpperCase()}
-              </button>
-            {/each}
-          </div>
-        </div>
-        <div class="appgrp">
           <span class="cap">{t('language')}</span>
           <div class="langs">
             {#each LANGS as l (l)}
@@ -392,6 +418,8 @@
     </footer>
   {/if}
 </div>
+
+<svelte:window onclick={onWindowClick} onkeydown={onWindowKey} />
 
 {#if streakShow !== null}
   <Streak days={streakShow} onDone={() => (streakShow = null)} />

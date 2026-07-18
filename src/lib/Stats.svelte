@@ -45,6 +45,37 @@
   }
 
   const minutes = (ms: number) => Math.max(1, Math.round(ms / 60_000));
+
+  /** "3h 12m" / "42m" — lifetime reading time. */
+  function fmtTime(ms: number): string {
+    const m = Math.round(ms / 60_000);
+    return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+  }
+
+  function shortDay(day: string): string {
+    const d = new Date(`${day}T12:00:00`);
+    return d.toLocaleDateString(i18n.resolved === 'de' ? 'de-DE' : 'en-US', {
+      day: '2-digit',
+      month: 'short',
+    });
+  }
+
+  /** Tiles for the lifetime aggregates (v0.4.2 "real stats"). */
+  const tiles = $derived.by(() => {
+    const tt = stats?.totals;
+    if (!tt) return [] as { k: string; v: string; d?: string }[];
+    const out: { k: string; v: string; d?: string }[] = [
+      { k: t('time_read_k'), v: fmtTime(tt.time_ms) },
+      { k: t('avg_wpm_k'), v: tt.avg_wpm > 0 ? String(tt.avg_wpm) : '—' },
+      { k: t('books_done_k'), v: String(tt.books_finished) },
+      { k: t('active_days_k'), v: String(tt.active_days) },
+      { k: t('sessions_k'), v: String(tt.sessions) },
+    ];
+    if (tt.best_day) {
+      out.push({ k: t('best_day_k'), v: num(tt.best_day.words), d: shortDay(tt.best_day.day) });
+    }
+    return out;
+  });
 </script>
 
 <div class="wrap statsview">
@@ -73,6 +104,17 @@
       </div>
     </div>
 
+    {#if tiles.length > 0}
+      <div class="tiles">
+        {#each tiles as tile, i (tile.k)}
+          <div class="tile" style="--i:{i}">
+            <div class="tv">{tile.v}{#if tile.d}<span class="td">{tile.d}</span>{/if}</div>
+            <div class="lab">{tile.k}</div>
+          </div>
+        {/each}
+      </div>
+    {/if}
+
     <div class="goalcap">
       <span>{t('today_k')} — {num(stats.today.words)} / {num(stats.goal)} {t('words')}</span>
       <b>{goalPct}%</b>
@@ -80,11 +122,11 @@
     <div class="goalbar"><i style="width: {goalPct}%"></i></div>
 
     <div class="dayschart" role="img" aria-label={t('last_days')}>
-      {#each chart as c (c.day)}
+      {#each chart as c, i (c.day)}
         <div
           class="bar"
           class:hit={c.words >= stats.goal}
-          style="height: {Math.max(3, (c.words / chartMax) * 100)}%"
+          style="height: {Math.max(3, (c.words / chartMax) * 100)}%; --i:{i}"
           title="{c.day} · {num(c.words)}"
         ></div>
       {/each}

@@ -32,6 +32,14 @@ const DICT: Dict = {
     de: 'Gast-Sitzung — dein Lesefortschritt lebt nur in diesem Browser',
   },
   guest_keep: { en: 'keep it', de: 'sichern' },
+  recent_k: { en: 'recent', de: 'zuletzt' },
+  all_books_k: { en: 'all books', de: 'alle Bücher' },
+  time_read_k: { en: 'time read', de: 'Lesezeit' },
+  books_done_k: { en: 'books finished', de: 'Bücher beendet' },
+  active_days_k: { en: 'active days', de: 'aktive Tage' },
+  best_day_k: { en: 'best day', de: 'bester Tag' },
+  start_here: { en: 'start here', de: 'starte hier' },
+  new_k: { en: 'new', de: 'neu' },
 
   // landing
   start_reading: { en: 'Start reading', de: 'Loslesen' },

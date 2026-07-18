@@ -66,16 +66,20 @@
   }
   load();
 
-  // continue card: the most recently read, unfinished book
-  const cont = $derived(
+  // Playful pass (contract v0.4.2): the home leads with the last 3 read
+  // books as cards; a fresh library suggests its first book instead.
+  const recent = $derived(
     books
-      .filter((b) => b.position > 0 && b.position < b.word_count && b.last_read_at)
-      .sort((a, b) => (b.last_read_at ?? 0) - (a.last_read_at ?? 0))[0] ?? null,
+      .filter((b) => b.last_read_at)
+      .sort((a, b) => (b.last_read_at ?? 0) - (a.last_read_at ?? 0))
+      .slice(0, 3),
   );
-  // Friction pass (contract v0.4.1): reading front and center — in-progress
-  // by recency, then unread (server order), finished last.
-  const rest = $derived.by(() => {
-    const others = books.filter((b) => b !== cont);
+  const cards = $derived(recent.length > 0 ? recent : books.slice(0, 1));
+  // The ALL list: everything not in the cards — in-progress by recency,
+  // then unread (server order), finished last (friction pass, v0.4.1).
+  const listBooks = $derived.by(() => {
+    const inCards = new Set(cards.map((b) => b.id));
+    const others = books.filter((b) => !inCards.has(b.id));
     const rank = (b: Book) =>
       b.word_count > 0 && b.position >= b.word_count ? 2 : b.last_read_at ? 0 : 1;
     return others
@@ -89,12 +93,14 @@
       .map((x) => x.b);
   });
 
-  const wordsRead = $derived(books.reduce((n, b) => n + Math.min(b.position, b.word_count), 0));
   const num = (n: number) => n.toLocaleString();
 
+  function pctNum(b: Book): number {
+    return b.word_count > 0 ? Math.min(100, Math.floor((b.position / b.word_count) * 100)) : 0;
+  }
+
   function pct(b: Book): string {
-    const p = b.word_count > 0 ? Math.min(100, Math.floor((b.position / b.word_count) * 100)) : 0;
-    return `${String(p).padStart(2, '0')}%`;
+    return `${String(pctNum(b)).padStart(2, '0')}%`;
   }
 
   function minsLeft(b: Book): number {
@@ -253,11 +259,6 @@
 <div class="wrap lib">
   <div class="head">
     <div class="who">@<b>{who}</b></div>
-    <div class="metar">
-      {books.length}
-      {t('books_k')} · {num(stats?.total_words ?? wordsRead)}
-      {t('words_read_k')}
-    </div>
   </div>
 
   {#if user.guest}
@@ -270,16 +271,21 @@
   {#if !loaded}
     <div class="status">{t('loading')}<span class="cur">_</span></div>
   {:else}
-    {#if cont}
-      <div class="cont fadeup">
-        <div class="l">
-          <div class="k">{t('continue_k')}</div>
-          <div class="t">{cont.title}</div>
-          <div class="p">{pct(cont)} · ~{minsLeft(cont)} {t('min')} {t('left')}</div>
-        </div>
-        <button class="btn" type="button" onclick={() => cont && open(cont)}>
-          {t('resume')} →
-        </button>
+    {#if cards.length > 0}
+      <div class="rcards fadeup" class:solo={cards.length === 1}>
+        {#each cards as b, i (b.id)}
+          <button class="rcard" class:hero={i === 0} type="button" onclick={() => open(b)}>
+            <span class="rk">
+              {recent.length === 0 ? t('start_here') : i === 0 ? t('continue_k') : t('recent_k')}
+            </span>
+            <span class="rt">{b.title}</span>
+            <span class="rm">
+              {b.author ?? b.source.toUpperCase()} · ~{minsLeft(b)} {t('min')} {t('left')}
+            </span>
+            <span class="rbar"><i style="width: {Math.max(1, pctNum(b))}%"></i></span>
+            <span class="rgo"><b>{pct(b)}</b><span class="rres">{t('resume')} →</span></span>
+          </button>
+        {/each}
       </div>
     {/if}
 
@@ -294,21 +300,17 @@
       />
     {/if}
 
+    {#if listBooks.length > 0 || results !== null}
+      <div class="listcap"><span class="cap">{t('all_books_k')}</span><i></i></div>
+    {/if}
     <div class="list">
       {#if books.length === 0}
         <div class="empty">{t('add_something')} ↓</div>
       {:else if results !== null && results.length === 0}
         <div class="empty">— {query} —</div>
       {:else}
-        {#each results ?? rest as b, i (b.id)}
+        {#each results ?? listBooks as b (b.id)}
           <div class="rowbook" class:arm={confirming === b.id}>
-            <button
-              class="no"
-              type="button"
-              aria-hidden="true"
-              tabindex="-1"
-              onclick={() => open(b)}
-            >{String(i + 1).padStart(2, '0')}</button>
             <button class="main" type="button" style="all:unset;flex:1;min-width:0;cursor:pointer" onclick={() => open(b)}>
               <div class="t">{b.title}</div>
               <div class="d">{desc(b)}</div>
@@ -327,7 +329,13 @@
                 type="button"
                 aria-label="delete {b.title}"
                 onclick={() => (confirming = b.id)}
-              >×</button>
+              >
+                <svg class="tcan" viewBox="0 0 16 16" aria-hidden="true">
+                  <path class="lid" d="M2.6 4.6h10.8M6.1 4.4V2.9h3.8v1.5" />
+                  <path class="bin" d="M4.1 6.6l.5 7.9h6.8l.5-7.9" />
+                  <path class="slats" d="M6.5 8.6v3.9M8 8.6v3.9M9.5 8.6v3.9" />
+                </svg>
+              </button>
             {/if}
           </div>
         {/each}

@@ -98,6 +98,15 @@ export interface Stats {
   goal: number;
   streak: { current: number; best: number };
   days: { day: string; words: number }[];
+  /** Lifetime aggregates (v0.4.2); absent on pre-v0.4.2 servers. */
+  totals?: {
+    time_ms: number;
+    sessions: number;
+    avg_wpm: number;
+    books_finished: number;
+    active_days: number;
+    best_day: { day: string; words: number } | null;
+  };
 }
 
 export interface ReadingSession {
