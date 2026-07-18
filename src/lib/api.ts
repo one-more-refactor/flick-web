@@ -28,6 +28,8 @@ export interface User {
   username: string | null;
   guest: boolean;
   onboarded: boolean;
+  /** "free" | "pro" (v0.6). */
+  plan?: string;
   settings: Settings;
   /** Present from server v0.4 on. */
   uploads?: UploadStatus;
@@ -274,6 +276,27 @@ export const purgeBook = (id: string): Promise<void> =>
 
 export const setTags = (id: string, tags: string[]): Promise<Book> =>
   request<Book>(`/books/${id}/tags`, json({ tags }, 'PUT'));
+
+// ---------- share links (v0.6) ----------
+
+export const shareBook = (id: string): Promise<{ token: string; path: string }> =>
+  request<{ token: string; path: string }>(`/books/${id}/share`, { method: 'POST' });
+
+export const unshareBook = (id: string): Promise<void> =>
+  request<void>(`/books/${id}/share`, { method: 'DELETE' });
+
+export interface SharedInfo {
+  title: string;
+  author: string | null;
+  word_count: number;
+  category: string | null;
+}
+
+export const sharedInfo = (token: string): Promise<SharedInfo> =>
+  request<SharedInfo>(`/shared/${token}`);
+
+export const sharedImport = (token: string): Promise<Book> =>
+  request<Book>(`/shared/${token}/import`, { method: 'POST' });
 
 /** Rewrite a public Dropbox / Google Drive / OneDrive share link into a
  *  direct-download URL for POST /api/import/url. Returns null when the link

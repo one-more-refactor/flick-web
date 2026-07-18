@@ -49,6 +49,77 @@
   let tagging = $state<string | null>(null);
   let tagDraft = $state('');
 
+  // share (v0.6): row id whose link was just copied
+  let sharedOk = $state<string | null>(null);
+
+  async function doShare(id: string) {
+    try {
+      const { path } = await api.shareBook(id);
+      await navigator.clipboard.writeText(`${location.origin}${path}`);
+      sharedOk = id;
+      setTimeout(() => {
+        if (sharedOk === id) sharedOk = null;
+      }, 1800);
+    } catch (err) {
+      error = message(err);
+    }
+  }
+
+  // selection mode (v0.6): bulk to-trash and bulk tag-add
+  let selecting = $state(false);
+  let selected = $state(new Set<string>());
+  let bulkTagging = $state(false);
+  let bulkTagDraft = $state('');
+
+  function toggleSel(id: string) {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    selected = next;
+  }
+
+  function exitSelect() {
+    selecting = false;
+    selected = new Set();
+    bulkTagging = false;
+    bulkTagDraft = '';
+  }
+
+  async function bulkTrash() {
+    busy = '…';
+    for (const id of selected) {
+      try {
+        await api.deleteBook(id);
+      } catch {
+        // keep going; the reload shows what survived
+      }
+    }
+    busy = null;
+    exitSelect();
+    await load();
+  }
+
+  async function bulkTag() {
+    const extra = bulkTagDraft
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (extra.length === 0) return;
+    busy = '…';
+    for (const id of selected) {
+      const b = books.find((x) => x.id === id);
+      if (!b) continue;
+      try {
+        await api.setTags(id, [...new Set([...b.tags, ...extra])].slice(0, 12));
+      } catch {
+        // keep going
+      }
+    }
+    busy = null;
+    exitSelect();
+    await load();
+  }
+
   function message(err: unknown): string {
     return err instanceof Error ? err.message : t('err_generic');
   }
@@ -238,12 +309,34 @@
 <div class="wrap lib">
   <div class="head">
     <div class="who">@<b>{who}</b></div>
+    <div class="statsrow compact">
+      <button class="stat statlink" type="button" onclick={onStats}>
+        <DotNumber value={stats?.streak.current ?? 0} grid={3.2} />
+        <div class="goalmini" aria-hidden="true">
+          <i
+            style="width: {Math.min(
+              100,
+              Math.round(((stats?.today.words ?? 0) / (stats?.goal ?? 300)) * 100),
+            )}%"
+          ></i>
+        </div>
+        <div class="lab">{t('day_streak_k')} →</div>
+      </button>
+      <button class="stat statlink" type="button" onclick={onStats}>
+        <div class="plain">{num(stats?.total_words ?? 0)}</div>
+        <div class="lab">{t('words_read_k')}</div>
+      </button>
+      <button class="stat statlink" type="button" onclick={onStats}>
+        <div class="plain">{num(stats?.today.words ?? 0)}</div>
+        <div class="lab">{t('today_k')}</div>
+      </button>
+    </div>
   </div>
 
   {#if user.guest}
     <div class="guestrow">
       <span>{t('guest_hint')}</span>
-      <button class="linklike" type="button" onclick={onAuth}>{t('guest_keep')} <b>→</b></button>
+      <button class="gkeep" type="button" onclick={onAuth}>{t('guest_keep')} →</button>
     </div>
   {/if}
 
@@ -280,14 +373,56 @@
     {/if}
 
     <div class="listcap">
-      <span class="cap">{t('all_books_k')}</span><i></i>
-      {#if allowance !== null}
-        <span class="cap">{allowance} {t('uploads_left')}</span>
+      <span class="cap">{t('all_books_k')}</span>
+      {#if listBooks.length > 0}
+        <button
+          class="linklike selbtn"
+          type="button"
+          onclick={() => (selecting ? exitSelect() : (selecting = true))}
+        >{selecting ? `× ${t('cancel_k')}` : `☐ ${t('select_k')}`}</button>
+      {/if}
+      <i></i>
+      {#if user.uploads && user.uploads.limit !== null}
+        <div
+          class="upwrap"
+          title="{user.uploads.used}/{user.uploads.limit} · {allowance} {t('uploads_left')}"
+        >
+          <div class="upbar">
+            <i style="width: {Math.min(100, (user.uploads.used / user.uploads.limit) * 100)}%"
+            ></i>
+          </div>
+          <span class="uplabel">{user.uploads.used}/{user.uploads.limit}</span>
+        </div>
       {/if}
       <button class="btn addbtn" type="button" onclick={() => (wizardOpen = true)}>
         + {t('add')}
       </button>
     </div>
+
+    {#if selecting && selected.size > 0}
+      <div class="selbar">
+        <b>{selected.size}</b>
+        {t('selected_k')}
+        <button class="linklike" type="button" onclick={bulkTrash}>{t('to_trash_k')}</button>
+        {#if bulkTagging}
+          <input
+            class="taginput"
+            type="text"
+            bind:value={bulkTagDraft}
+            placeholder="work, sci-fi"
+            onkeydown={(e) => {
+              if (e.key === 'Enter') void bulkTag();
+              else if (e.key === 'Escape') bulkTagging = false;
+            }}
+          />
+        {:else}
+          <button class="linklike" type="button" onclick={() => (bulkTagging = true)}>
+            # {t('add_tags_k')}
+          </button>
+        {/if}
+        <button class="linklike" type="button" onclick={exitSelect}>{t('cancel_k')}</button>
+      </div>
+    {/if}
 
     {#if tagBar.length > 1 && results === null}
       <div class="tagbar">
@@ -317,11 +452,24 @@
         <div class="empty">— #{activeTag} —</div>
       {:else}
         {#each results ?? listBooks as b (b.id)}
-          <div class="rowbook" class:arm={confirming === b.id} class:bye={leaving === b.id}>
+          <div
+            class="rowbook"
+            class:arm={confirming === b.id}
+            class:bye={leaving === b.id}
+            class:issel={selecting && selected.has(b.id)}
+          >
             {#if pctNum(b) > 0}
               <i class="rprog" style="width: {pctNum(b)}%" aria-hidden="true"></i>
             {/if}
-            <button class="main" type="button" style="all:unset;flex:1;min-width:0;cursor:pointer" onclick={() => open(b)}>
+            {#if selecting}
+              <span class="selbox" aria-hidden="true">{selected.has(b.id) ? '▣' : '☐'}</span>
+            {/if}
+            <button
+              class="main"
+              type="button"
+              style="all:unset;flex:1;min-width:0;cursor:pointer"
+              onclick={() => (selecting ? toggleSel(b.id) : open(b))}
+            >
               <div class="t">{b.title}</div>
               {#if tagging === b.id}
                 <div class="d">{desc(b)}</div>
@@ -354,8 +502,18 @@
                 <button class="key yes" type="button" onclick={() => doDelete(b.id)}>y</button>
                 <button class="key" type="button" onclick={() => (confirming = null)}>n</button>
               </span>
+            {:else if selecting}
+              <span class="pct">{pct(b)}</span>
             {:else}
               <span class="pct">{pct(b)}</span>
+              <button
+                class="rshare"
+                class:ok={sharedOk === b.id}
+                type="button"
+                aria-label="{t('share_k')}: {b.title}"
+                title={sharedOk === b.id ? t('link_copied') : t('share_k')}
+                onclick={() => doShare(b.id)}
+              >{sharedOk === b.id ? '✓' : '»'}</button>
               <button
                 class="rtag"
                 type="button"
@@ -415,31 +573,6 @@
       </div>
     {/if}
 
-    <div class="statsrow">
-      <button class="stat statlink" type="button" onclick={onStats}>
-        <DotNumber value={stats?.streak.current ?? 0} />
-        <div class="goalmini" aria-hidden="true">
-          <i
-            style="width: {Math.min(
-              100,
-              Math.round(((stats?.today.words ?? 0) / (stats?.goal ?? 300)) * 100),
-            )}%"
-          ></i>
-        </div>
-        <div class="lab">
-          {t('day_streak_k')} · {t('goal_today')}
-          {Math.min(100, Math.round(((stats?.today.words ?? 0) / (stats?.goal ?? 300)) * 100))}% →
-        </div>
-      </button>
-      <button class="stat statlink" type="button" onclick={onStats}>
-        <div class="plain">{num(stats?.total_words ?? 0)}</div>
-        <div class="lab">{t('words_read_k')}</div>
-      </button>
-      <button class="stat statlink" type="button" onclick={onStats}>
-        <div class="plain">{num(stats?.today.words ?? 0)}</div>
-        <div class="lab">{t('today_k')}</div>
-      </button>
-    </div>
   {/if}
 </div>
 

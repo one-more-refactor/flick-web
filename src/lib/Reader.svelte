@@ -36,6 +36,30 @@
   // svelte-ignore state_referenced_locally
   let wpm = $state(clampWpm(user.settings.wpm));
 
+  // ---- reader customisation (v0.6): per-device, localStorage ----
+  type ReaderPrefs = { font: 's' | 'm' | 'l' | 'xl'; guides: boolean };
+  const PREFS_KEY = 'flick.reader';
+  const FONT_MULT: Record<ReaderPrefs['font'], number> = { s: 0.85, m: 1, l: 1.18, xl: 1.4 };
+  function loadPrefs(): ReaderPrefs {
+    try {
+      const raw = JSON.parse(localStorage.getItem(PREFS_KEY) ?? '');
+      return {
+        font: ['s', 'm', 'l', 'xl'].includes(raw.font) ? raw.font : 'm',
+        guides: raw.guides !== false,
+      };
+    } catch {
+      return { font: 'm', guides: true };
+    }
+  }
+  let prefs = $state<ReaderPrefs>(loadPrefs());
+  $effect(() => {
+    localStorage.setItem(PREFS_KEY, JSON.stringify($state.snapshot(prefs)));
+  });
+  let custOpen = $state(false);
+
+  // ---- zen mode (v0.6): chrome fades, the word remains ----
+  let zen = $state(false);
+
   // svelte-ignore state_referenced_locally
   let lastWpm = wpm;
   $effect(() => {
@@ -215,9 +239,21 @@
         break;
       case 'Escape':
         e.preventDefault();
-        exit();
+        if (custOpen) custOpen = false;
+        else if (zen) zen = false;
+        else exit();
+        break;
+      case 'z':
+      case 'Z':
+        if (onSlider) return;
+        e.preventDefault();
+        zen = !zen;
         break;
     }
+  }
+
+  function onWindowClick(e: MouseEvent) {
+    if (custOpen && !(e.target as Element | null)?.closest('.custwrap')) custOpen = false;
   }
 
   onMount(() => {
@@ -255,14 +291,55 @@
   let stageW = $state(0);
   const basePx = $derived(stageW > 0 && stageW < 420 ? 30 : stageW < 560 ? 36 : 42);
   const fontPx = $derived.by(() => {
-    if (stageW <= 0) return basePx;
+    const scaled = basePx * FONT_MULT[prefs.font];
+    if (stageW <= 0) return scaled;
     const halfChars = Math.max(pre.length, post.length) + 1;
     const maxPx = (stageW / 2 - 14) / (halfChars * 0.62); // mono glyph ≈ 0.62em wide
-    return Math.max(14, Math.min(basePx, maxPx));
+    return Math.max(14, Math.min(scaled, maxPx));
   });
 
   // tick ruler under the slider — instrument-panel flavour, majors at 100s
   const TICKS = Array.from({ length: (800 - 150) / 25 + 1 }, (_, i) => 150 + i * 25);
+
+  // ---- progress scrubber (v0.6): click/drag to navigate the text ----
+  let scrubbing = $state(false);
+  let scrubEl: HTMLDivElement | undefined = $state();
+
+  function scrubTo(e: PointerEvent) {
+    if (!scrubEl) return;
+    const rect = scrubEl.getBoundingClientRect();
+    const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    seek(Math.round(frac * (total - 1)));
+  }
+
+  function scrubStart(e: PointerEvent) {
+    scrubbing = true;
+    scrubEl?.setPointerCapture(e.pointerId);
+    scrubTo(e);
+  }
+
+  function scrubMove(e: PointerEvent) {
+    if (scrubbing) scrubTo(e);
+  }
+
+  function scrubEnd() {
+    if (!scrubbing) return;
+    scrubbing = false;
+    void savePosition();
+  }
+
+  const minsAt = $derived(Math.max(0, Math.round((total - index) / Math.max(100, wpm))));
+
+  // ---- slider wave (v0.6): ticks lift around the thumb while sliding ----
+  let sliding = $state(false);
+  function tickScale(tick: number): number {
+    if (!sliding) return 1;
+    const center = (wpm - 150) / 650;
+    const pos = (tick - 150) / 650;
+    const d = Math.abs(pos - center);
+    const near = Math.max(0, 1 - d * 7);
+    return 1 + 1.5 * near * near;
+  }
 
   const padLen = Math.max(3, String(total).length);
   const pad = (n: number) => String(n).padStart(padLen, '0');
@@ -270,7 +347,7 @@
   const fillPct = $derived(total > 0 ? ((index + 1) / total) * 100 : 0);
 </script>
 
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={onKey} onclick={onWindowClick} />
 <svelte:document
   onvisibilitychange={() => {
     // A hidden tab pauses cleanly instead of silently burning words.
@@ -278,26 +355,52 @@
   }}
 />
 
-<div class="wrap readerview">
+<div class="wrap readerview" class:zen>
   <div class="rhead">
     <button class="backbtn" type="button" onclick={exit}>← {t('library_link')}</button>
     <span class="btitle">{book.title}</span>
+    <button class="zenbtn" type="button" onclick={() => (zen = !zen)} title="zen [z]">
+      {t('zen_k')}_
+    </button>
     <span class="counter">{counter}</span>
   </div>
+  {#if zen}
+    <button class="zenexit" type="button" onclick={() => (zen = false)} aria-label="exit zen">
+      ×
+    </button>
+  {/if}
 
   <section class="reader-panel" aria-label="Reader">
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="stage" bind:clientWidth={stageW} onclick={onStageClick}>
-      <div class="rail top"></div>
-      <div class="rail bottom"></div>
-      <div class="notch top"></div>
-      <div class="notch bottom"></div>
+      {#if prefs.guides}
+        <div class="rail top"></div>
+        <div class="rail bottom"></div>
+        <div class="notch top"></div>
+        <div class="notch bottom"></div>
+      {/if}
       <div class="word" style="font-size: {fontPx}px">
         <span class="pre">{pre}</span><span class="orp">{pivot}</span><span class="post">{post}</span>
       </div>
     </div>
 
-    <div class="progress"><div class="fill" style="width: {fillPct}%"></div></div>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="progress scrub"
+      class:scrubbing
+      bind:this={scrubEl}
+      onpointerdown={scrubStart}
+      onpointermove={scrubMove}
+      onpointerup={scrubEnd}
+      onpointercancel={scrubEnd}
+    >
+      <div class="fill" style="width: {fillPct}%"></div>
+      {#if scrubbing}
+        <div class="scrubtip" style="left: {fillPct}%">
+          {Math.round(fillPct)}% · ~{minsAt} {t('min')}
+        </div>
+      {/if}
+    </div>
 
     <div class="controls">
       <button class="btn" type="button" onclick={toggle}>
@@ -312,14 +415,69 @@
             step="25"
             bind:value={wpm}
             aria-label="Words per minute"
+            onpointerdown={() => (sliding = true)}
+            onpointerup={() => (sliding = false)}
+            onpointercancel={() => (sliding = false)}
+            onblur={() => (sliding = false)}
           />
           <div class="wpmticks" aria-hidden="true">
             {#each TICKS as tick (tick)}
-              <i class:maj={tick % 100 === 0} class:on={tick === wpm}></i>
+              <i
+                class:maj={tick % 100 === 0}
+                class:on={tick === wpm}
+                style="--s:{tickScale(tick)}"
+              ></i>
             {/each}
           </div>
         </div>
-        <div class="wpm-val"><b>{wpm}</b> wpm</div>
+        <div class="wpm-val">
+          {#key wpm}<b class="popnum">{wpm}</b>{/key} wpm
+        </div>
+      </div>
+      <div class="custwrap">
+        <button
+          class="custbtn"
+          type="button"
+          onclick={() => (custOpen = !custOpen)}
+          aria-expanded={custOpen}
+          title={t('font_k')}
+        >Aa</button>
+        {#if custOpen}
+          <div class="custpanel">
+            <div class="crow">
+              <span class="ck">{t('font_k')}</span>
+              {#each ['s', 'm', 'l', 'xl'] as f (f)}
+                <button
+                  class="cchip"
+                  class:on={prefs.font === f}
+                  type="button"
+                  onclick={() => (prefs.font = f as 's' | 'm' | 'l' | 'xl')}
+                >{f.toUpperCase()}</button>
+              {/each}
+            </div>
+            <div class="crow">
+              <span class="ck">{t('guides_k')}</span>
+              <button
+                class="cchip"
+                class:on={prefs.guides}
+                type="button"
+                onclick={() => (prefs.guides = !prefs.guides)}
+              >{prefs.guides ? 'ON' : 'OFF'}</button>
+            </div>
+            <div class="crow">
+              <span class="ck">{t('zen_k')}</span>
+              <button
+                class="cchip"
+                class:on={zen}
+                type="button"
+                onclick={() => {
+                  zen = !zen;
+                  custOpen = false;
+                }}
+              >{zen ? 'ON' : 'OFF'} <i>[z]</i></button>
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
 

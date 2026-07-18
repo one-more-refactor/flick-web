@@ -14,14 +14,19 @@
     onBack: () => void;
   } = $props();
 
+  // Plan matrix v2 (contract v0.6): the reading experience is free for
+  // everyone; Pro gates only server-cost things.
   const ROWS = $derived([
-    { label: t('f_reader'), free: true, pro: true },
-    { label: t('f_imports'), free: true, pro: true },
-    { label: t('f_storage'), free: true, pro: true },
-    { label: `${t('f_uploads_free')} / ${t('f_uploads_pro')}`, free: 'limited', pro: true },
-    { label: t('f_cloud_sync'), free: false, pro: true },
-    { label: t('f_ext'), free: false, pro: true },
-  ] as { label: string; free: boolean | 'limited'; pro: boolean }[]);
+    { label: t('f_reader'), free: '✓', pro: '✓' },
+    { label: t('f_clients'), free: '✓', pro: '✓' },
+    { label: `${t('f_imports')} · ${t('f_bulk')}`, free: '✓', pro: '✓' },
+    { label: t('f_share'), free: '✓', pro: '✓' },
+    { label: t('f_storage'), free: '✓', pro: '✓' },
+    { label: `${t('f_uploads_free')} / ${t('f_uploads_pro')}`, free: '15', pro: '∞' },
+    { label: t('f_history'), free: '90d', pro: '∞' },
+    { label: t('f_insights'), free: '—', pro: '✓' },
+    { label: t('f_support'), free: '—', pro: '♥' },
+  ] as { label: string; free: string; pro: string }[]);
 
   const FAQ = $derived([
     { q: t('prem_q1'), a: t('prem_a1') },
@@ -57,12 +62,15 @@
         <div class="prow" style="--i:{i + 1}">
           <span class="pl">{row.label}</span>
           <span class="pc">
-            {#if row.free === true}<b class="yes">✓</b>
-            {:else if row.free === 'limited'}<span class="lim">15</span>
-            {:else}<span class="no">—</span>{/if}
+            {#if row.free === '✓'}<b class="yes">✓</b>
+            {:else if row.free === '—'}<span class="no">—</span>
+            {:else}<span class="lim">{row.free}</span>{/if}
           </span>
           <span class="pc pro">
-            {#if row.pro}<b class="yes">✓</b>{:else}<span class="no">—</span>{/if}
+            {#if row.pro === '✓'}<b class="yes">✓</b>
+            {:else if row.pro === '♥'}<b class="yes">♥</b>
+            {:else if row.pro === '—'}<span class="no">—</span>
+            {:else}<b class="yes">{row.pro}</b>{/if}
           </span>
         </div>
       {/each}

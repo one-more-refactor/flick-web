@@ -102,6 +102,39 @@
   const goFile = (file: File) =>
     run(file.name, () => api.createBookFromFile(file, title.trim() || undefined));
 
+  // Bulk import (contract v0.6): up to 50 files, sequential; a single file
+  // still opens the reader, several land in the library.
+  const BULK_MAX = 50;
+  let bulkDone = $state(0);
+  let bulkTotal = $state(0);
+
+  async function goFiles(files: File[]) {
+    const batch = files.slice(0, BULK_MAX);
+    if (batch.length === 0) return;
+    if (batch.length === 1) {
+      void goFile(batch[0]);
+      return;
+    }
+    if (busy) return;
+    bulkTotal = batch.length;
+    bulkDone = 0;
+    error = null;
+    let failed = 0;
+    for (const file of batch) {
+      busy = `${bulkDone + 1}/${bulkTotal} · ${file.name}`;
+      try {
+        await api.createBookFromFile(file);
+      } catch (err) {
+        failed += 1;
+        error = message(err);
+        if (err instanceof api.ApiError && err.code === 'upload_limit') break;
+      }
+      bulkDone += 1;
+    }
+    busy = null;
+    if (failed === 0) onClose();
+  }
+
   const goUrl = () => run(link, () => api.importUrl(link.trim(), title.trim() || undefined));
 
   function goCloud() {
@@ -129,14 +162,12 @@
   function onDrop(e: DragEvent) {
     e.preventDefault();
     dragOver = false;
-    const file = e.dataTransfer?.files?.[0];
-    if (file) void goFile(file);
+    void goFiles([...(e.dataTransfer?.files ?? [])]);
   }
 
   function onFileChange(e: Event) {
     const input = e.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file) void goFile(file);
+    void goFiles([...(input.files ?? [])]);
     input.value = '';
   }
 
@@ -213,10 +244,12 @@
             <input
               type="file"
               accept="application/pdf,.pdf,.epub,.txt,.md,application/epub+zip,text/plain"
+              multiple
               hidden
               bind:this={fileInput}
               onchange={onFileChange}
             />
+            <span class="fhint">{t('f_bulk')}</span>
           </div>
         {:else}
           <div class="field">

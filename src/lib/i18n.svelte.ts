@@ -134,6 +134,41 @@ const DICT: Dict = {
   chip_risk: { en: 'read today to keep your streak', de: 'lies heute, um deine Serie zu halten' },
   chip_done: { en: 'goal reached — streak safe', de: 'Ziel erreicht — Serie sicher' },
   goal_today: { en: 'today', de: 'heute' },
+  // v0.6: selection, share, reader
+  select_k: { en: 'select', de: 'auswählen' },
+  selected_k: { en: 'selected', de: 'ausgewählt' },
+  to_trash_k: { en: 'to trash', de: 'in den Papierkorb' },
+  add_tags_k: { en: 'add tags', de: 'Tags hinzufügen' },
+  cancel_k: { en: 'cancel', de: 'abbrechen' },
+  share_k: { en: 'share', de: 'teilen' },
+  link_copied: { en: 'link copied', de: 'Link kopiert' },
+  shared_intro: { en: 'shared with you via flick', de: 'mit dir geteilt über flick' },
+  shared_gone: {
+    en: 'this share link is gone — expired or revoked',
+    de: 'dieser Teilen-Link ist weg — abgelaufen oder zurückgezogen',
+  },
+  shared_note: {
+    en: 'one tap: the book lands in your own library and starts playing. No account needed.',
+    de: 'ein Tipp: das Buch landet in deiner eigenen Bibliothek und läuft los. Kein Konto nötig.',
+  },
+  zen_k: { en: 'zen', de: 'zen' },
+  guides_k: { en: 'guides', de: 'Linien' },
+  font_k: { en: 'size', de: 'Größe' },
+  f_clients: {
+    en: 'all clients — web, phone, browser extension',
+    de: 'alle Clients — Web, Handy, Browser-Extension',
+  },
+  f_bulk: { en: 'bulk import — up to 50 files at once', de: 'Massenimport — bis zu 50 Dateien auf einmal' },
+  f_share: {
+    en: 'share links — friends read & import instantly',
+    de: 'Teilen-Links — Freunde lesen & importieren sofort',
+  },
+  f_history: { en: 'reading history', de: 'Leseverlauf' },
+  f_insights: {
+    en: 'deep reading insights (server-computed), when they land',
+    de: 'tiefe Lese-Insights (serverseitig), sobald verfügbar',
+  },
+  f_support: { en: 'you keep an indie project alive', de: 'du hältst ein Indie-Projekt am Leben' },
 
   // landing
   start_reading: { en: 'Start reading', de: 'Loslesen' },
@@ -153,9 +188,9 @@ const DICT: Dict = {
   uploads_left: { en: 'uploads left this week', de: 'Uploads übrig diese Woche' },
   upload_limit_hit: { en: 'weekly upload limit reached — resets Monday', de: 'Wochen-Upload-Limit erreicht — Reset am Montag' },
   plans_soon: { en: 'SOON', de: 'BALD' },
-  plans_free_feats: { en: 'reader · all themes · stats · streaks · every import · search', de: 'Reader · alle Themes · Statistik · Serien · alle Importe · Suche' },
+  plans_free_feats: { en: 'all clients · every import · share links · 15 uploads/week', de: 'alle Clients · alle Importe · Teilen-Links · 15 Uploads/Woche' },
   plans_free_books: { en: '100 books', de: '100 Bücher' },
-  plans_pro_feats: { en: 'unlimited shelf · cloud imports · auto-capture', de: 'unbegrenztes Regal · Cloud-Importe · Auto-Capture' },
+  plans_pro_feats: { en: 'unlimited uploads · full history · deep insights', de: 'unbegrenzte Uploads · voller Verlauf · tiefe Insights' },
   plans_mo: { en: 'month', de: 'Monat' },
   plans_yr: { en: 'or €36/year', de: 'oder 36 €/Jahr' },
 

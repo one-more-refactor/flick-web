@@ -7,7 +7,8 @@ export type Route =
   | { name: 'read'; id: string }
   | { name: 'stats' }
   | { name: 'auth' }
-  | { name: 'premium' };
+  | { name: 'premium' }
+  | { name: 'shared'; token: string };
 
 export function parsePath(pathname: string): Route {
   const read = pathname.match(/^\/read\/([A-Za-z0-9]+)$/);
@@ -15,6 +16,8 @@ export function parsePath(pathname: string): Route {
   if (pathname === '/stats') return { name: 'stats' };
   if (pathname === '/auth') return { name: 'auth' };
   if (pathname === '/premium') return { name: 'premium' };
+  const shared = pathname.match(/^\/s\/([A-Za-z0-9]+)$/);
+  if (shared) return { name: 'shared', token: shared[1] };
   return { name: 'home' };
 }
 
@@ -28,6 +31,8 @@ export function pathFor(route: Route): string {
       return '/auth';
     case 'premium':
       return '/premium';
+    case 'shared':
+      return `/s/${route.token}`;
     default:
       return '/';
   }

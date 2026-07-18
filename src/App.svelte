@@ -11,6 +11,7 @@
   import Onboarding from './lib/Onboarding.svelte';
   import Library from './lib/Library.svelte';
   import Premium from './lib/Premium.svelte';
+  import SharedLanding from './lib/SharedLanding.svelte';
   import DotNumber from './lib/DotNumber.svelte';
   import Reader from './lib/Reader.svelte';
   import Stats from './lib/Stats.svelte';
@@ -24,7 +25,8 @@
     | { name: 'library' }
     | { name: 'reader'; book: Book; timeline: Timeline }
     | { name: 'stats' }
-    | { name: 'premium' };
+    | { name: 'premium' }
+    | { name: 'shared'; token: string };
 
   let view = $state<View>({ name: 'boot' });
   let user = $state<User | null>(null);
@@ -45,8 +47,10 @@
     go({ name: 'landing' }, 'replace');
   });
 
-  // ---- top-bar streak chip (v0.5.1): the habit, front and center ----
+  // ---- top-bar streak chip (v0.5.1): the habit, front and center.
+  // v0.6: click quarter-flips it (cube-style) between streak and today faces.
   let chip = $state<{ current: number; today: number; goal: number } | null>(null);
+  let chipFlip = $state(0);
   function refreshChip() {
     api
       .stats()
@@ -74,6 +78,8 @@
         return { name: 'auth' };
       case 'premium':
         return { name: 'premium' };
+      case 'shared':
+        return { name: 'shared', token: v.token };
       default:
         return { name: 'home' };
     }
@@ -94,6 +100,10 @@
     }
     if (route.name === 'premium') {
       view = { name: 'premium' };
+      return;
+    }
+    if (route.name === 'shared') {
+      view = { name: 'shared', token: route.token };
       return;
     }
     if (!user) {
@@ -199,6 +209,15 @@
     }
   }
 
+  /** /s/:token → guest if needed → import the copy → straight into the reader. */
+  async function onSharedStart(token: string) {
+    const u = user ?? (await startGuest());
+    if (!u) return;
+    const book = await api.sharedImport(token);
+    const tl = await api.timeline(book.id);
+    onRead(book, tl);
+  }
+
   function onAuthed(u: User) {
     adopt(u);
     go(u.guest || u.onboarded ? { name: 'library' } : { name: 'onboarding' }, 'replace');
@@ -276,7 +295,9 @@
               : 'contribute — flick'
             : view.name === 'auth'
               ? 'sign in — flick'
-              : 'flick — read it in a flick';
+              : view.name === 'shared'
+                ? 'shared — flick'
+                : 'flick — read it in a flick';
   });
 
   // ---- flip cube: a quarter-turn forward per flick; the visible face always
@@ -309,14 +330,27 @@
 <div class="page">
   <header class="top">
     <div class="wrap">
-      <button
-        class="mark"
-        type="button"
-        onclick={() => {
-          if (user) go({ name: 'library' });
-        }}
-        aria-label="flick"
-      >FLICK<span class="cur">_</span></button>
+      <div class="navl">
+        <button
+          class="mark"
+          type="button"
+          onclick={() => {
+            if (user) go({ name: 'library' });
+          }}
+          aria-label="flick"
+        >FLICK<span class="cur">_</span></button>
+        {#if edition === 'hosted'}
+          {#if user && user.uploads?.limit === null}
+            <button class="probadge" type="button" onclick={goPremium} title="PRO">
+              PRO<span class="cur">_</span>
+            </button>
+          {:else}
+            <button class="link brk premium" type="button" onclick={goPremium}>
+              {t('go_premium')}
+            </button>
+          {/if}
+        {/if}
+      </div>
       <div class="navr">
         {#if user && chip && chip.current > 0}
           <button
@@ -325,18 +359,21 @@
             type="button"
             title={chip.today >= chip.goal ? t('chip_done') : t('chip_risk')}
             aria-label="{chip.current} {t('day_streak_k')}"
-            onclick={() => go({ name: 'stats' })}
+            onclick={() => (chipFlip += 1)}
           >
-            <DotNumber value={chip.current} grid={2.4} />
-            <span class="scur">{chip.today >= chip.goal ? '.' : '_'}</span>
+            <span class="schipbox" style="--flip:{chipFlip}">
+              <span class="sface f0">
+                <DotNumber value={chip.current} grid={2.4} />
+                <span class="scur">{chip.today >= chip.goal ? '.' : '_'}</span>
+              </span>
+              <span class="sface f1">
+                <b>{Math.min(100, Math.round((chip.today / chip.goal) * 100))}%</b>
+                <span class="stlab">{t('goal_today')}</span>
+              </span>
+            </span>
           </button>
         {/if}
         <a class="link brk" href={REPO} target="_blank" rel="noopener">GITHUB<span class="x">↗</span></a>
-        {#if edition === 'hosted'}
-          <button class="link brk premium" type="button" onclick={goPremium}>
-            {t('go_premium')}
-          </button>
-        {/if}
         <div class="thpick">
           <button
             class="thbtn"
@@ -440,6 +477,12 @@
         {:else if view.name === 'premium'}
           <Premium
             {edition}
+            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+          />
+        {:else if view.name === 'shared'}
+          <SharedLanding
+            token={view.token}
+            onStart={onSharedStart}
             onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
           />
         {/if}
