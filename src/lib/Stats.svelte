@@ -5,11 +5,60 @@
   import { t, i18n } from './i18n.svelte';
   import DotNumber from './DotNumber.svelte';
 
-  let { onBack }: { onBack: () => void } = $props();
+  let { onBack, onWrapped }: { onBack: () => void; onWrapped?: () => void } = $props();
 
   let stats = $state<Stats | null>(null);
   let sessions = $state<ReadingSession[]>([]);
   let error = $state<string | null>(null);
+
+  // ---- friends scoreboard (contract v0.7: aggregates only) ----
+  let rows = $state<api.FriendRow[]>([]);
+  let myLink = $state<string | null>(null);
+  let addCode = $state('');
+  let copied = $state(false);
+  let socialErr = $state<string | null>(null);
+
+  function loadSocial() {
+    api
+      .friends()
+      .then((r) => (rows = [...r].sort((a, b) => b.week_words - a.week_words)))
+      .catch(() => {});
+    api.friendLink().then((l) => (myLink = l.path)).catch(() => {});
+  }
+  loadSocial();
+
+  async function addFriend() {
+    const code = addCode.trim();
+    if (!code) return;
+    socialErr = null;
+    try {
+      await api.friendAdd(code.replace(/^.*\/f\//, ''));
+      addCode = '';
+      loadSocial();
+    } catch (e) {
+      socialErr = e instanceof Error ? e.message : t('err_generic');
+    }
+  }
+
+  async function unfriend(id: string) {
+    try {
+      await api.friendRemove(id);
+      loadSocial();
+    } catch {
+      // row refresh will tell the truth
+    }
+  }
+
+  async function copyLink() {
+    if (!myLink) return;
+    try {
+      await navigator.clipboard.writeText(`${location.origin}${myLink}`);
+      copied = true;
+      setTimeout(() => (copied = false), 1600);
+    } catch {
+      // link stays visible
+    }
+  }
 
   api.stats().then((s) => (stats = s)).catch((e) => (error = e instanceof Error ? e.message : t('err_generic')));
   api.sessions().then((s) => (sessions = s)).catch(() => {});
@@ -132,6 +181,53 @@
       {/each}
     </div>
     <div class="chartcap">{t('last_days')} · {t('goal_k')} {num(stats.goal)}</div>
+
+    <div class="frsec">
+      <div class="listcap"><span class="cap">{t('fr_k')}</span><i></i>
+        {#if onWrapped}
+          <button class="linklike" type="button" onclick={onWrapped}>WRAPPED_ →</button>
+        {/if}
+      </div>
+      {#if rows.length <= 1}
+        <div class="empty" style="padding: 18px 0">{t('fr_none')}</div>
+      {:else}
+        <div class="frboard">
+          {#each rows as r, i (r.id)}
+            <div class="frrow" class:me={r.me}>
+              <span class="frrank">{String(i + 1).padStart(2, '0')}</span>
+              <span class="frname">{r.me ? `@${r.name}` : r.name}</span>
+              <span class="frn"><b>{r.week_words.toLocaleString()}</b> {t('fr_week')}</span>
+              <span class="frn">{r.streak} ▮</span>
+              {#if !r.me}
+                <button
+                  class="linklike"
+                  type="button"
+                  title={t('unfriend')}
+                  onclick={() => unfriend(r.id)}
+                >×</button>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
+      <div class="fradd">
+        <input
+          class="taginput"
+          type="text"
+          bind:value={addCode}
+          placeholder={t('fr_add_ph')}
+          onkeydown={(e) => e.key === 'Enter' && addFriend()}
+        />
+        <button class="btn ghost" type="button" onclick={addFriend}>{t('fr_add')} →</button>
+        {#if myLink}
+          <button class="linklike" type="button" onclick={copyLink}>
+            {copied ? `✓ ${t('link_copied')}` : `${t('fr_link')} →`}
+          </button>
+        {/if}
+      </div>
+      {#if socialErr}<div class="status err">{socialErr}</div>{/if}
+      <div class="frnote">{t('fr_privacy')}</div>
+    </div>
 
     <div class="sesslist">
       {#if sessions.length === 0}

@@ -90,7 +90,10 @@
     busy = true;
     error = null;
     try {
-      onAuthed(await api.register(email, password, name.trim() || undefined));
+      const ref = localStorage.getItem('flick.ref') ?? undefined;
+      const user = await api.register(email, password, name.trim() || undefined, ref);
+      if (ref) localStorage.removeItem('flick.ref');
+      onAuthed(user);
     } catch (err) {
       error = message(err);
     } finally {

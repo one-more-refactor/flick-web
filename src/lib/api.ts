@@ -30,6 +30,10 @@ export interface User {
   onboarded: boolean;
   /** "free" | "pro" (v0.6). */
   plan?: string;
+  /** Effective Pro right now (plan, credit time, or free_pro event). */
+  pro_active?: boolean;
+  /** Remaining credit-based Pro days. */
+  pro_days?: number;
   settings: Settings;
   /** Present from server v0.4 on. */
   uploads?: UploadStatus;
@@ -192,13 +196,22 @@ export const meta = (): Promise<Meta> => request<Meta>('/meta');
 
 // ---------- auth ----------
 
-export const guest = (): Promise<User> => request<User>('/auth/guest', { method: 'POST' });
+export const guest = (ref?: string): Promise<User> =>
+  request<User>('/auth/guest', ref ? json({ ref }) : { method: 'POST' });
 
 export const lookup = (email: string): Promise<Lookup> =>
   request<Lookup>('/auth/lookup', json({ email }));
 
-export const register = (email: string, password: string, name?: string): Promise<User> =>
-  request<User>('/auth/register', json(name ? { email, password, name } : { email, password }));
+export const register = (
+  email: string,
+  password: string,
+  name?: string,
+  ref?: string,
+): Promise<User> =>
+  request<User>(
+    '/auth/register',
+    json({ email, password, ...(name ? { name } : {}), ...(ref ? { ref } : {}) }),
+  );
 
 export const login = (email: string, password: string): Promise<User> =>
   request<User>('/auth/login', json({ email, password }));
@@ -354,3 +367,66 @@ export function localDay(d = new Date()): string {
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+
+// ---------- referrals, events, social (v0.7) ----------
+
+export interface ReferralStatus {
+  code: string;
+  path: string;
+  invited: number;
+  pending: number;
+  qualified: number;
+  reward_days: number;
+  qualify_days: number;
+  event: { title: string; ends_at: number } | null;
+}
+
+export const referral = (): Promise<ReferralStatus> => request<ReferralStatus>('/referral');
+
+export interface ActiveEvent {
+  kind: string;
+  title: string;
+  ends_at: number;
+}
+
+export const activeEvents = (): Promise<ActiveEvent[]> =>
+  request<ActiveEvent[]>('/events/active');
+
+export interface FriendRow {
+  id: string;
+  name: string;
+  me: boolean;
+  week_words: number;
+  total_words: number;
+  today_words: number;
+  streak: number;
+  best_streak: number;
+}
+
+export const friends = (): Promise<FriendRow[]> => request<FriendRow[]>('/friends');
+
+export const friendLink = (): Promise<{ code: string; path: string }> =>
+  request<{ code: string; path: string }>('/friends/link');
+
+export const friendAdd = (code: string): Promise<void> =>
+  request<void>('/friends/add', json({ code }));
+
+export const friendRemove = (id: string): Promise<void> =>
+  request<void>(`/friends/${id}`, { method: 'DELETE' });
+
+export interface Wrapped {
+  year: number;
+  total_words: number;
+  active_days: number;
+  best_day: { day: string; words: number } | null;
+  best_streak: number;
+  top_month: number | null;
+  top_weekday: number | null;
+  sessions: number;
+  time_ms: number;
+  avg_wpm: number;
+  books_finished: number;
+}
+
+export const wrapped = (year?: number): Promise<Wrapped> =>
+  request<Wrapped>(year ? `/wrapped?year=${year}` : '/wrapped');

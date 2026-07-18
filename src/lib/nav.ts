@@ -8,7 +8,11 @@ export type Route =
   | { name: 'stats' }
   | { name: 'auth' }
   | { name: 'premium' }
-  | { name: 'shared'; token: string };
+  | { name: 'shared'; token: string }
+  | { name: 'invite' }
+  | { name: 'wrapped' }
+  | { name: 'refland'; code: string }
+  | { name: 'friendland'; code: string };
 
 export function parsePath(pathname: string): Route {
   const read = pathname.match(/^\/read\/([A-Za-z0-9]+)$/);
@@ -18,6 +22,12 @@ export function parsePath(pathname: string): Route {
   if (pathname === '/premium') return { name: 'premium' };
   const shared = pathname.match(/^\/s\/([A-Za-z0-9]+)$/);
   if (shared) return { name: 'shared', token: shared[1] };
+  if (pathname === '/invite') return { name: 'invite' };
+  if (pathname === '/wrapped') return { name: 'wrapped' };
+  const ref = pathname.match(/^\/r\/([A-Za-z0-9]+)$/);
+  if (ref) return { name: 'refland', code: ref[1] };
+  const friend = pathname.match(/^\/f\/([A-Za-z0-9]+)$/);
+  if (friend) return { name: 'friendland', code: friend[1] };
   return { name: 'home' };
 }
 
@@ -33,6 +43,14 @@ export function pathFor(route: Route): string {
       return '/premium';
     case 'shared':
       return `/s/${route.token}`;
+    case 'invite':
+      return '/invite';
+    case 'wrapped':
+      return '/wrapped';
+    case 'refland':
+      return `/r/${route.code}`;
+    case 'friendland':
+      return `/f/${route.code}`;
     default:
       return '/';
   }

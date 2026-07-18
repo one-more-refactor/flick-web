@@ -12,6 +12,8 @@
   import Library from './lib/Library.svelte';
   import Premium from './lib/Premium.svelte';
   import SharedLanding from './lib/SharedLanding.svelte';
+  import Invite from './lib/Invite.svelte';
+  import Wrapped from './lib/Wrapped.svelte';
   import DotNumber from './lib/DotNumber.svelte';
   import Reader from './lib/Reader.svelte';
   import Stats from './lib/Stats.svelte';
@@ -26,7 +28,9 @@
     | { name: 'reader'; book: Book; timeline: Timeline }
     | { name: 'stats' }
     | { name: 'premium' }
-    | { name: 'shared'; token: string };
+    | { name: 'shared'; token: string }
+    | { name: 'invite' }
+    | { name: 'wrapped' };
 
   let view = $state<View>({ name: 'boot' });
   let user = $state<User | null>(null);
@@ -51,11 +55,29 @@
   // v0.6: click quarter-flips it (cube-style) between streak and today faces.
   let chip = $state<{ current: number; today: number; goal: number } | null>(null);
   let chipFlip = $state(0);
+  // v0.7: referral status (FOMO squares + pro days) and running events.
+  let refStat = $state<api.ReferralStatus | null>(null);
+  let refEvent = $state<api.ActiveEvent | null>(null);
+
+  api
+    .activeEvents()
+    .then((evs) => (refEvent = evs.find((e) => e.kind === 'referral') ?? null))
+    .catch(() => {});
+
   function refreshChip() {
     api
       .stats()
       .then((s) => (chip = { current: s.streak.current, today: s.today.words, goal: s.goal }))
       .catch(() => {});
+    if (user && !user.guest) {
+      api.referral().then((s) => (refStat = s)).catch(() => {});
+    }
+    // A friend code picked up before there was a session applies now.
+    const pending = localStorage.getItem('flick.friend');
+    if (user && pending) {
+      localStorage.removeItem('flick.friend');
+      api.friendAdd(pending).catch(() => {});
+    }
   }
 
   /** Adopt a user object: remember it and apply their settings app-wide. */
@@ -80,6 +102,10 @@
         return { name: 'premium' };
       case 'shared':
         return { name: 'shared', token: v.token };
+      case 'invite':
+        return { name: 'invite' };
+      case 'wrapped':
+        return { name: 'wrapped' };
       default:
         return { name: 'home' };
     }
@@ -104,6 +130,45 @@
     }
     if (route.name === 'shared') {
       view = { name: 'shared', token: route.token };
+      return;
+    }
+    if (route.name === 'invite') {
+      view = { name: 'invite' };
+      return;
+    }
+    if (route.name === 'refland') {
+      // /r/:code — remember the referrer, then act like the front door.
+      try {
+        localStorage.setItem('flick.ref', route.code);
+      } catch {
+        // storage unavailable — the visit still works
+      }
+      nav.replace({ name: 'home' });
+      view = user ? { name: 'library' } : { name: 'landing' };
+      return;
+    }
+    if (route.name === 'friendland') {
+      if (user) {
+        try {
+          await api.friendAdd(route.code);
+        } catch {
+          // unknown/own code — nothing to do
+        }
+        nav.replace({ name: 'stats' });
+        view = { name: 'stats' };
+      } else {
+        try {
+          localStorage.setItem('flick.friend', route.code);
+        } catch {
+          // ignore
+        }
+        nav.replace({ name: 'home' });
+        view = { name: 'landing' };
+      }
+      return;
+    }
+    if (route.name === 'wrapped') {
+      view = user ? { name: 'wrapped' } : { name: 'landing' };
       return;
     }
     if (!user) {
@@ -155,7 +220,9 @@
     if (starting) return null;
     starting = true;
     try {
-      const u = await api.guest();
+      const ref = localStorage.getItem('flick.ref') ?? undefined;
+      const u = await api.guest(ref);
+      if (ref) localStorage.removeItem('flick.ref');
       adopt(u);
       return u;
     } catch {
@@ -297,7 +364,11 @@
               ? 'sign in — flick'
               : view.name === 'shared'
                 ? 'shared — flick'
-                : 'flick — read it in a flick';
+                : view.name === 'invite'
+                  ? 'invite — flick'
+                  : view.name === 'wrapped'
+                    ? 'wrapped — flick'
+                    : 'flick — read it in a flick';
   });
 
   // ---- flip cube: a quarter-turn forward per flick; the visible face always
@@ -340,9 +411,28 @@
           aria-label="flick"
         >FLICK<span class="cur">_</span></button>
         {#if edition === 'hosted'}
-          {#if user && user.uploads?.limit === null}
-            <button class="probadge" type="button" onclick={goPremium} title="PRO">
+          {#if user && user.pro_active}
+            <button class="probadge" type="button" onclick={() => go({ name: 'invite' })} title="PRO">
               PRO<span class="cur">_</span>
+              {#if (user.pro_days ?? 0) > 0 && user.plan !== 'pro'}
+                <i class="prodays">{user.pro_days}d</i>
+              {/if}
+            </button>
+            {#if refStat && refStat.qualified > 0}
+              <button
+                class="invrow"
+                type="button"
+                title="{refStat.qualified} {t('inv_qualified')}"
+                onclick={() => go({ name: 'invite' })}
+              >
+                {#each Array.from({ length: Math.min(8, refStat.qualified) }) as _, i (i)}
+                  <b>▪</b>
+                {/each}
+              </button>
+            {/if}
+          {:else if refEvent && user}
+            <button class="evchip" type="button" onclick={() => go({ name: 'invite' })}>
+              {t('ev_invite')}
             </button>
           {:else}
             <button class="link brk premium" type="button" onclick={goPremium}>
@@ -473,7 +563,7 @@
         {:else if view.name === 'reader' && user}
           <Reader book={view.book} timeline={view.timeline} {user} {onExit} {onWpm} />
         {:else if view.name === 'stats' && user}
-          <Stats onBack={() => go({ name: 'library' })} />
+          <Stats onBack={() => go({ name: 'library' })} onWrapped={() => go({ name: 'wrapped' })} />
         {:else if view.name === 'premium'}
           <Premium
             {edition}
@@ -485,6 +575,14 @@
             onStart={onSharedStart}
             onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
           />
+        {:else if view.name === 'invite'}
+          <Invite
+            {user}
+            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+            onAuth={() => go({ name: 'auth' })}
+          />
+        {:else if view.name === 'wrapped'}
+          <Wrapped onBack={() => go({ name: 'stats' })} />
         {/if}
       </div>
     {/key}

@@ -169,6 +169,40 @@ const DICT: Dict = {
     de: 'tiefe Lese-Insights (serverseitig), sobald verfügbar',
   },
   f_support: { en: 'you keep an indie project alive', de: 'du hältst ein Indie-Projekt am Leben' },
+  // v0.7: referrals, events, social
+  inv_head: { en: 'get a friend pro.', de: 'hol dir einen Freund Pro.' },
+  inv_sub: {
+    en: 'invite someone — when they join and actually read (300 words on 3 days), you BOTH get 30 days of Pro.',
+    de: 'lade jemanden ein — wenn die Person beitritt und wirklich liest (300 Wörter an 3 Tagen), bekommt ihr BEIDE 30 Tage Pro.',
+  },
+  inv_copy: { en: 'copy invite link', de: 'Einladungslink kopieren' },
+  inv_none: {
+    en: 'no invite event running right now — links still work, rewards unlock with the next event',
+    de: 'gerade kein Einladungs-Event — Links funktionieren trotzdem, Belohnungen kommen mit dem nächsten Event',
+  },
+  inv_ends: { en: 'event ends in', de: 'Event endet in' },
+  inv_qualified: { en: 'qualified', de: 'qualifiziert' },
+  inv_pending: { en: 'pending', de: 'ausstehend' },
+  inv_days: { en: 'days', de: 'Tagen' },
+  ev_invite: { en: 'invite → 30d pro', de: 'einladen → 30 T. Pro' },
+  wr_title: { en: 'your year in words', de: 'dein Jahr in Wörtern' },
+  wr_month: { en: 'top month', de: 'Top-Monat' },
+  wr_weekday: { en: 'top weekday', de: 'Top-Wochentag' },
+  wr_none: {
+    en: 'nothing on record for this year yet — go read something',
+    de: 'für dieses Jahr ist noch nichts notiert — lies was',
+  },
+  fr_k: { en: 'friends', de: 'Freunde' },
+  fr_add_ph: { en: 'paste a friend link or code', de: 'Freundes-Link oder Code einfügen' },
+  fr_add: { en: 'add', de: 'hinzufügen' },
+  fr_link: { en: 'your friend link', de: 'dein Freundes-Link' },
+  fr_week: { en: 'this week', de: 'diese Woche' },
+  fr_none: { en: 'no friends yet — trade links', de: 'noch keine Freunde — tauscht Links' },
+  fr_privacy: {
+    en: 'friends only ever see numbers — words, streaks, time. Never titles.',
+    de: 'Freunde sehen immer nur Zahlen — Wörter, Serien, Zeit. Nie Titel.',
+  },
+  unfriend: { en: 'unfriend', de: 'entfernen' },
 
   // landing
   start_reading: { en: 'Start reading', de: 'Loslesen' },
