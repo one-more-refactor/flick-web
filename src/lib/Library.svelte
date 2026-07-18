@@ -418,7 +418,18 @@
     <div class="statsrow">
       <button class="stat statlink" type="button" onclick={onStats}>
         <DotNumber value={stats?.streak.current ?? 0} />
-        <div class="lab">{t('day_streak_k')} →</div>
+        <div class="goalmini" aria-hidden="true">
+          <i
+            style="width: {Math.min(
+              100,
+              Math.round(((stats?.today.words ?? 0) / (stats?.goal ?? 300)) * 100),
+            )}%"
+          ></i>
+        </div>
+        <div class="lab">
+          {t('day_streak_k')} · {t('goal_today')}
+          {Math.min(100, Math.round(((stats?.today.words ?? 0) / (stats?.goal ?? 300)) * 100))}% →
+        </div>
       </button>
       <button class="stat statlink" type="button" onclick={onStats}>
         <div class="plain">{num(stats?.total_words ?? 0)}</div>

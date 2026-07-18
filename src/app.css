@@ -1217,3 +1217,99 @@ input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-of
   .rtag { width: 44px; height: 44px; margin: -8px -4px -8px 0; }
   .key { min-width: 46px; height: 40px; }
 }
+
+/* ---------- v0.5.1: streak chip, goal mini-bar, premium page ---------- */
+
+/* top-bar streak chip — the habit, front and center. Dashed + blinking
+   cursor while today's goal is open; solid + full stop once it's met. */
+.schip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px dashed var(--accent);
+  transition: background 160ms, border-color 160ms, transform 160ms var(--ease);
+}
+.schip:hover { transform: translateY(-1px); }
+.schip .scur { color: var(--accent); font-weight: 700; animation: blink 1.15s steps(1) infinite; }
+.schip.done {
+  border-style: solid;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.schip.done .scur { animation: none; }
+
+/* today-goal mini bar under the library streak tile */
+.goalmini { width: 96px; height: 3px; background: var(--line); margin-top: 8px; overflow: hidden; }
+.goalmini i { display: block; height: 100%; background: var(--accent); transition: width 400ms var(--ease); }
+
+/* ---------- premium / contribute page ---------- */
+.premview .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 26px; gap: 12px; }
+.premhero { margin-bottom: 30px; }
+.premhero .price { display: flex; align-items: baseline; gap: 10px; }
+.premhero .price .cur { font-size: 30px; font-weight: 700; color: var(--accent); }
+.premhero .price .per { font-size: 13px; color: var(--dim); }
+.premhero .psub { font-size: 14px; margin: 14px 0 4px; }
+.premhero .pyr { font-size: 12px; color: var(--dim); margin: 0; }
+.premhero .pyr b { color: var(--accent); font-weight: 400; }
+.premhero .chead { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; margin: 0 0 10px; }
+
+.premtable { border: 1px solid var(--line); background: var(--panel); margin-bottom: 22px; }
+.prow {
+  display: grid;
+  grid-template-columns: 1fr 70px 70px;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 16px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: fu 380ms var(--ease) calc(var(--i) * 50ms) forwards;
+}
+.prow:first-child { border-top: none; }
+.prow .pl { min-width: 0; }
+.prow .pc { text-align: center; }
+.prow .pc.pro { border-left: 1px solid var(--line); }
+.prow.phead .pc { font-size: 10px; font-weight: 700; letter-spacing: 0.18em; color: var(--dim); }
+.prow.phead .pc.pro { color: var(--accent); }
+.prow .yes { color: var(--accent); font-weight: 700; }
+.prow .no { color: var(--dim); }
+.prow .lim { font-size: 10px; color: var(--dim); letter-spacing: 0.04em; }
+
+.premcta { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 34px; }
+.premcta .soonnote { font-size: 11px; color: var(--dim); }
+.premfaq { display: grid; gap: 16px; margin-bottom: 30px; }
+.faq {
+  border-left: 2px solid var(--accent);
+  padding-left: 14px;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: fu 400ms var(--ease) calc(200ms + var(--i) * 90ms) forwards;
+}
+.faq .fq { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+.faq .fa { font-size: 12px; color: var(--dim); margin-top: 4px; max-width: 60ch; }
+
+.contribgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+.ccard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 18px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(7px);
+  animation: fu 380ms var(--ease) calc(var(--i) * 70ms) forwards;
+  transition: border-color 160ms, transform 180ms var(--ease);
+}
+.ccard:hover { border-color: var(--accent); transform: translateY(-2px); }
+.ccard .ci { font-size: 22px; color: var(--accent); line-height: 1; }
+.ccard .cn { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; }
+.ccard .ca { color: var(--dim); transition: transform 180ms var(--ease), color 140ms; }
+.ccard:hover .ca { transform: translateX(4px); color: var(--accent); }
+
+@media (max-width: 560px) {
+  .contribgrid { grid-template-columns: 1fr; }
+  .prow { grid-template-columns: 1fr 52px 52px; }
+}

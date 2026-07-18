@@ -10,6 +10,8 @@
   import Auth from './lib/Auth.svelte';
   import Onboarding from './lib/Onboarding.svelte';
   import Library from './lib/Library.svelte';
+  import Premium from './lib/Premium.svelte';
+  import DotNumber from './lib/DotNumber.svelte';
   import Reader from './lib/Reader.svelte';
   import Stats from './lib/Stats.svelte';
   import Streak from './lib/Streak.svelte';
@@ -21,7 +23,8 @@
     | { name: 'onboarding' }
     | { name: 'library' }
     | { name: 'reader'; book: Book; timeline: Timeline }
-    | { name: 'stats' };
+    | { name: 'stats' }
+    | { name: 'premium' };
 
   let view = $state<View>({ name: 'boot' });
   let user = $state<User | null>(null);
@@ -42,11 +45,21 @@
     go({ name: 'landing' }, 'replace');
   });
 
+  // ---- top-bar streak chip (v0.5.1): the habit, front and center ----
+  let chip = $state<{ current: number; today: number; goal: number } | null>(null);
+  function refreshChip() {
+    api
+      .stats()
+      .then((s) => (chip = { current: s.streak.current, today: s.today.words, goal: s.goal }))
+      .catch(() => {});
+  }
+
   /** Adopt a user object: remember it and apply their settings app-wide. */
   function adopt(u: User) {
     user = u;
     themeState.adopt(u.settings);
     i18n.adopt(u.settings.lang);
+    refreshChip();
   }
 
   // ---- view ⇄ URL sync (CONTRACTS v0.4: real URLs, working back button) ----
@@ -59,6 +72,8 @@
         return { name: 'stats' };
       case 'auth':
         return { name: 'auth' };
+      case 'premium':
+        return { name: 'premium' };
       default:
         return { name: 'home' };
     }
@@ -75,6 +90,10 @@
   async function applyRoute(route: nav.Route) {
     if (route.name === 'auth') {
       view = { name: 'auth' };
+      return;
+    }
+    if (route.name === 'premium') {
+      view = { name: 'premium' };
       return;
     }
     if (!user) {
@@ -209,6 +228,7 @@
 
   function onExit() {
     go({ name: 'library' });
+    refreshChip();
     const before = preWords;
     if (before === null) return;
     api
@@ -230,6 +250,7 @@
       // cookie may already be dead — drop to the landing regardless
     }
     user = null;
+    chip = null;
     themeState.detach();
     i18n.detach();
     go({ name: 'landing' }, 'replace');
@@ -241,6 +262,22 @@
     user ? (user.username ?? (user.guest ? t('guest') : (user.name || user.email))) : null,
   );
   const inReader = $derived(view.name === 'reader');
+
+  // ---- per-route document titles (v0.5.1 brand polish) ----
+  $effect(() => {
+    document.title =
+      view.name === 'reader'
+        ? `${view.book.title} — flick`
+        : view.name === 'stats'
+          ? 'stats — flick'
+          : view.name === 'premium'
+            ? edition === 'hosted'
+              ? 'premium — flick'
+              : 'contribute — flick'
+            : view.name === 'auth'
+              ? 'sign in — flick'
+              : 'flick — read it in a flick';
+  });
 
   // ---- flip cube: a quarter-turn forward per flick; the visible face always
   // matches the resolved mode (re-syncs if the system theme flips it).
@@ -263,14 +300,9 @@
     if (e.key === 'Escape') themesOpen = false;
   }
 
-  /** Top-bar GO PREMIUM (hosted only): land on the plans strip. */
+  /** Top-bar GO PREMIUM: the real premium page (v0.5.1). */
   function goPremium() {
-    if (view.name !== 'landing') go({ name: 'landing' });
-    setTimeout(
-      () =>
-        document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-      60,
-    );
+    go({ name: 'premium' });
   }
 </script>
 
@@ -286,6 +318,19 @@
         aria-label="flick"
       >FLICK<span class="cur">_</span></button>
       <div class="navr">
+        {#if user && chip && chip.current > 0}
+          <button
+            class="schip"
+            class:done={chip.today >= chip.goal}
+            type="button"
+            title={chip.today >= chip.goal ? t('chip_done') : t('chip_risk')}
+            aria-label="{chip.current} {t('day_streak_k')}"
+            onclick={() => go({ name: 'stats' })}
+          >
+            <DotNumber value={chip.current} grid={2.4} />
+            <span class="scur">{chip.today >= chip.goal ? '.' : '_'}</span>
+          </button>
+        {/if}
         <a class="link brk" href={REPO} target="_blank" rel="noopener">GITHUB<span class="x">↗</span></a>
         {#if edition === 'hosted'}
           <button class="link brk premium" type="button" onclick={goPremium}>
@@ -392,6 +437,11 @@
           <Reader book={view.book} timeline={view.timeline} {user} {onExit} {onWpm} />
         {:else if view.name === 'stats' && user}
           <Stats onBack={() => go({ name: 'library' })} />
+        {:else if view.name === 'premium'}
+          <Premium
+            {edition}
+            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+          />
         {/if}
       </div>
     {/key}

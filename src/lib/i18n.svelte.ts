@@ -73,6 +73,67 @@ const DICT: Dict = {
   days_left: { en: 'days left', de: 'Tage übrig' },
   tag_all: { en: 'all', de: 'alle' },
   edit_tags: { en: 'edit tags', de: 'Tags bearbeiten' },
+  // premium page (v0.5.1)
+  prem_sub: {
+    en: '€4/month keeps the lights on — and the free tier free.',
+    de: '4 €/Monat hält die Lichter an — und den Gratis-Tarif gratis.',
+  },
+  prem_free_k: { en: 'free', de: 'gratis' },
+  f_reader: {
+    en: 'the full reader — engine, all themes, stats, streaks, sync',
+    de: 'der volle Reader — Engine, alle Themes, Statistik, Serien, Sync',
+  },
+  f_imports: {
+    en: 'every import: paste · PDF · EPUB · TXT · URL · clippings · cloud links',
+    de: 'jeder Import: Einfügen · PDF · EPUB · TXT · URL · Clippings · Cloud-Links',
+  },
+  f_storage: { en: 'uncapped storage — nothing ever locked', de: 'unbegrenzter Speicher — nie gesperrt' },
+  f_uploads_free: { en: '15 uploads per week', de: '15 Uploads pro Woche' },
+  f_uploads_pro: { en: 'unlimited uploads', de: 'unbegrenzte Uploads' },
+  f_cloud_sync: {
+    en: 'cloud account sync (Dropbox · Drive), when it lands',
+    de: 'Cloud-Konto-Sync (Dropbox · Drive), sobald verfügbar',
+  },
+  f_ext: {
+    en: 'browser-extension auto-capture, when it lands',
+    de: 'Browser-Extension Auto-Capture, sobald verfügbar',
+  },
+  prem_q1: { en: "what's free stays free?", de: 'was gratis ist, bleibt gratis?' },
+  prem_a1: {
+    en: 'Binding. Features never move from free to Pro, and existing content is never locked or deleted.',
+    de: 'Verbindlich. Features wandern nie von Gratis zu Pro, und vorhandene Inhalte werden nie gesperrt oder gelöscht.',
+  },
+  prem_q2: { en: 'why is there no lifetime deal?', de: 'warum gibt es keinen Lifetime-Deal?' },
+  prem_a2: {
+    en: 'A one-time price on a product with ongoing storage costs is dishonest pyramid economics. We would rather stay small and solvent.',
+    de: 'Ein Einmalpreis für ein Produkt mit laufenden Speicherkosten ist unehrliche Pyramiden-Ökonomie. Lieber klein und solvent.',
+  },
+  prem_q3: { en: 'where does the money go?', de: 'wohin geht das Geld?' },
+  prem_a3: {
+    en: 'Hosting and development of the open project. flick is AGPL — the hosted service funds the code everyone gets.',
+    de: 'Hosting und Entwicklung des offenen Projekts. flick ist AGPL — der Hosted-Dienst finanziert den Code für alle.',
+  },
+  prem_soon_note: {
+    en: 'payments land soon — until then, everything here is free',
+    de: 'Bezahlung kommt bald — bis dahin ist hier alles gratis',
+  },
+  prem_star: { en: 'star the repo meanwhile', de: 'bis dahin: Stern auf GitHub' },
+  contrib_head: {
+    en: 'you self-host — everything is already yours.',
+    de: 'du hostest selbst — alles gehört schon dir.',
+  },
+  contrib_sub: {
+    en: 'No plans, no limits, no strings on your own server. If flick earns a place in your day, contribute instead:',
+    de: 'Keine Tarife, keine Limits auf deinem eigenen Server. Wenn flick einen Platz in deinem Tag verdient, trag stattdessen bei:',
+  },
+  contrib_star: { en: 'star it', de: 'Stern geben' },
+  contrib_fork: { en: 'fork it', de: 'forken' },
+  contrib_pr: { en: 'open a PR', de: 'PR öffnen' },
+  selfhost_docs: { en: 'self-hosting guide', de: 'Self-Hosting-Anleitung' },
+  // streak chip (v0.5.1)
+  chip_risk: { en: 'read today to keep your streak', de: 'lies heute, um deine Serie zu halten' },
+  chip_done: { en: 'goal reached — streak safe', de: 'Ziel erreicht — Serie sicher' },
+  goal_today: { en: 'today', de: 'heute' },
 
   // landing
   start_reading: { en: 'Start reading', de: 'Loslesen' },

@@ -6,13 +6,15 @@ export type Route =
   | { name: 'home' } // landing (logged out) or library (authed)
   | { name: 'read'; id: string }
   | { name: 'stats' }
-  | { name: 'auth' };
+  | { name: 'auth' }
+  | { name: 'premium' };
 
 export function parsePath(pathname: string): Route {
   const read = pathname.match(/^\/read\/([A-Za-z0-9]+)$/);
   if (read) return { name: 'read', id: read[1] };
   if (pathname === '/stats') return { name: 'stats' };
   if (pathname === '/auth') return { name: 'auth' };
+  if (pathname === '/premium') return { name: 'premium' };
   return { name: 'home' };
 }
 
@@ -24,6 +26,8 @@ export function pathFor(route: Route): string {
       return '/stats';
     case 'auth':
       return '/auth';
+    case 'premium':
+      return '/premium';
     default:
       return '/';
   }
