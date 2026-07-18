@@ -1,10 +1,12 @@
 <script lang="ts">
-  // The product home: continue card, numbered library, stats strip, and the
-  // add panel (paste / PDF / shelf). Mockup: docs — landing v0.4, app view.
+  // The product home (contract v0.4.2/v0.4.3): recent cards, tag filter,
+  // unnumbered ALL list with in-row progress, trash bin, and the guided
+  // add wizard behind a real ADD button.
   import * as api from './api';
-  import type { Book, CatalogEntry, Stats, Timeline, User } from './api';
+  import type { Book, Stats, Timeline, TrashItem, User } from './api';
   import { t } from './i18n.svelte';
   import DotNumber from './DotNumber.svelte';
+  import Wizard from './Wizard.svelte';
 
   let {
     user,
@@ -32,15 +34,20 @@
   let books = $state<Book[]>([]);
   let stats = $state<Stats | null>(null);
   let loaded = $state(false);
-  let adding = $state(false);
-  let addTitle = $state('');
-  let addText = $state('');
-  let shelf = $state<CatalogEntry[]>([]);
   let busy = $state<string | null>(null);
   let error = $state<string | null>(null);
   let confirming = $state<string | null>(null);
-  let dragOver = $state(false);
-  let fileInput: HTMLInputElement | undefined = $state();
+  let leaving = $state<string | null>(null);
+  let wizardOpen = $state(false);
+
+  // trash bin
+  let trashItems = $state<TrashItem[]>([]);
+  let trashOpen = $state(false);
+
+  // tags
+  let activeTag = $state<string | null>(null);
+  let tagging = $state<string | null>(null);
+  let tagDraft = $state('');
 
   function message(err: unknown): string {
     return err instanceof Error ? err.message : t('err_generic');
@@ -55,14 +62,7 @@
       loaded = true;
     }
     api.stats().then((s) => (stats = s)).catch(() => {});
-    // shelf entries not yet in the library
-    api
-      .catalog()
-      .then((c) => {
-        const have = new Set(books.map((b) => b.title));
-        shelf = c.filter((e) => !have.has(e.title));
-      })
-      .catch(() => {});
+    api.trash().then((tr) => (trashItems = tr.items)).catch(() => {});
   }
   load();
 
@@ -75,11 +75,21 @@
       .slice(0, 3),
   );
   const cards = $derived(recent.length > 0 ? recent : books.slice(0, 1));
+
+  /** Union of live tags with counts — the filter bar (≥2 distinct tags). */
+  const tagBar = $derived.by(() => {
+    const counts = new Map<string, number>();
+    for (const b of books) for (const tag of b.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  });
+
   // The ALL list: everything not in the cards — in-progress by recency,
-  // then unread (server order), finished last (friction pass, v0.4.1).
+  // then unread (server order), finished last; tag filter applies.
   const listBooks = $derived.by(() => {
     const inCards = new Set(cards.map((b) => b.id));
-    const others = books.filter((b) => !inCards.has(b.id));
+    const others = books.filter(
+      (b) => !inCards.has(b.id) && (activeTag === null || b.tags.includes(activeTag)),
+    );
     const rank = (b: Book) =>
       b.word_count > 0 && b.position >= b.word_count ? 2 : b.last_read_at ? 0 : 1;
     return others
@@ -136,29 +146,26 @@
     }
   }
 
+  /** Soft delete with the fly-to-trash animation (contract v0.4.3). */
   async function doDelete(id: string) {
     confirming = null;
-    busy = '…';
+    leaving = id;
     error = null;
+    await new Promise((r) => setTimeout(r, 430));
     try {
       await api.deleteBook(id);
       await load();
     } catch (err) {
       error = message(err);
     } finally {
-      busy = null;
+      leaving = null;
     }
   }
 
-  async function addPaste() {
-    if (!addText.trim()) return;
-    busy = t('loading');
-    error = null;
+  async function doRestore(id: string) {
+    busy = '…';
     try {
-      await api.createBookFromText(addText, addTitle.trim() || undefined);
-      addText = '';
-      addTitle = '';
-      adding = false;
+      await api.restoreBook(id);
       await load();
     } catch (err) {
       error = message(err);
@@ -167,13 +174,10 @@
     }
   }
 
-  async function uploadFile(file: File) {
-    busy = file.name;
-    error = null;
+  async function doPurge(id: string) {
+    busy = '…';
     try {
-      await api.createBookFromFile(file, addTitle.trim() || undefined);
-      addTitle = '';
-      adding = false;
+      await api.purgeBook(id);
       await load();
     } catch (err) {
       error = message(err);
@@ -182,23 +186,29 @@
     }
   }
 
-  let importLink = $state('');
+  function daysLeft(item: TrashItem): number {
+    return Math.max(0, Math.ceil((item.expires_at - Date.now() / 1000) / 86_400));
+  }
 
-  async function importFromUrl() {
-    const url = importLink.trim();
-    if (!url) return;
-    busy = url;
-    error = null;
+  // ---- inline tag editing ----
+  function startTagging(b: Book) {
+    tagging = b.id;
+    tagDraft = b.tags.join(', ');
+  }
+
+  async function saveTags(id: string) {
+    const wanted = tagDraft
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 12);
+    tagging = null;
     try {
-      await api.importUrl(url, addTitle.trim() || undefined);
-      importLink = '';
-      addTitle = '';
-      adding = false;
+      await api.setTags(id, wanted);
       await load();
+      if (activeTag !== null && !books.some((b) => b.tags.includes(activeTag!))) activeTag = null;
     } catch (err) {
       error = message(err);
-    } finally {
-      busy = null;
     }
   }
 
@@ -222,37 +232,6 @@
         })
         .catch(() => {});
     }, 250);
-  }
-
-  async function addFromShelf(slug: string) {
-    busy = t('loading');
-    error = null;
-    try {
-      await api.catalogAdd(slug);
-      adding = false;
-      await load();
-    } catch (err) {
-      // 409 = already there; just refresh
-      await load();
-      if (!(err instanceof api.ApiError && err.status === 409)) error = message(err);
-    } finally {
-      busy = null;
-    }
-  }
-
-  function onDrop(e: DragEvent) {
-    e.preventDefault();
-    dragOver = false;
-    if (busy) return;
-    const file = e.dataTransfer?.files?.[0];
-    if (file) void uploadFile(file);
-  }
-
-  function onFileChange(e: Event) {
-    const input = e.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file) void uploadFile(file);
-    input.value = '';
   }
 </script>
 
@@ -300,30 +279,90 @@
       />
     {/if}
 
-    {#if listBooks.length > 0 || results !== null}
-      <div class="listcap"><span class="cap">{t('all_books_k')}</span><i></i></div>
+    <div class="listcap">
+      <span class="cap">{t('all_books_k')}</span><i></i>
+      {#if allowance !== null}
+        <span class="cap">{allowance} {t('uploads_left')}</span>
+      {/if}
+      <button class="btn addbtn" type="button" onclick={() => (wizardOpen = true)}>
+        + {t('add')}
+      </button>
+    </div>
+
+    {#if tagBar.length > 1 && results === null}
+      <div class="tagbar">
+        <button
+          class="tagchip"
+          class:on={activeTag === null}
+          type="button"
+          onclick={() => (activeTag = null)}
+        >{t('tag_all')}</button>
+        {#each tagBar as [tag, count] (tag)}
+          <button
+            class="tagchip"
+            class:on={activeTag === tag}
+            type="button"
+            onclick={() => (activeTag = activeTag === tag ? null : tag)}
+          >#{tag}<i>{count}</i></button>
+        {/each}
+      </div>
     {/if}
+
     <div class="list">
       {#if books.length === 0}
         <div class="empty">{t('add_something')} ↓</div>
       {:else if results !== null && results.length === 0}
         <div class="empty">— {query} —</div>
+      {:else if results === null && listBooks.length === 0 && activeTag !== null}
+        <div class="empty">— #{activeTag} —</div>
       {:else}
         {#each results ?? listBooks as b (b.id)}
-          <div class="rowbook" class:arm={confirming === b.id}>
+          <div class="rowbook" class:arm={confirming === b.id} class:bye={leaving === b.id}>
+            {#if pctNum(b) > 0}
+              <i class="rprog" style="width: {pctNum(b)}%" aria-hidden="true"></i>
+            {/if}
             <button class="main" type="button" style="all:unset;flex:1;min-width:0;cursor:pointer" onclick={() => open(b)}>
               <div class="t">{b.title}</div>
-              <div class="d">{desc(b)}</div>
+              {#if tagging === b.id}
+                <div class="d">{desc(b)}</div>
+              {:else}
+                <div class="d">
+                  {desc(b)}
+                  {#if b.tags.length > 0}
+                    <span class="rowtags">{b.tags.map((x) => `#${x}`).join(' ')}</span>
+                  {/if}
+                </div>
+              {/if}
             </button>
-            {#if confirming === b.id}
+            {#if tagging === b.id}
+              <!-- svelte-ignore a11y_autofocus -->
+              <input
+                class="taginput"
+                type="text"
+                bind:value={tagDraft}
+                placeholder="work, sci-fi"
+                autofocus
+                onkeydown={(e) => {
+                  if (e.key === 'Enter') void saveTags(b.id);
+                  else if (e.key === 'Escape') tagging = null;
+                }}
+                onblur={() => (tagging = null)}
+              />
+            {:else if confirming === b.id}
               <span class="armq">
                 {t('delete_q')}
-                <button class="linklike" type="button" onclick={() => doDelete(b.id)}><b>y</b></button>
-                /
-                <button class="linklike" type="button" onclick={() => (confirming = null)}>n</button>
+                <button class="key yes" type="button" onclick={() => doDelete(b.id)}>y</button>
+                <button class="key" type="button" onclick={() => (confirming = null)}>n</button>
               </span>
             {:else}
               <span class="pct">{pct(b)}</span>
+              <button
+                class="rtag"
+                type="button"
+                aria-label="{t('edit_tags')}: {b.title}"
+                title={t('edit_tags')}
+                onclick={() => startTagging(b)}
+              >#</button>
               <button
                 class="rdel"
                 type="button"
@@ -345,76 +384,34 @@
     {#if busy}<div class="status" style="margin-top:12px">{busy}<span class="cur">_</span></div>{/if}
     {#if error}<div class="status err" style="margin-top:12px">{error}</div>{/if}
 
-    <div style="display:flex; justify-content:flex-end; align-items:baseline; gap:14px; margin-top:12px">
-      {#if allowance !== null && adding}
-        <span class="cap">{allowance} {t('uploads_left')}</span>
-      {/if}
-      <button class="linklike" type="button" onclick={() => (adding = !adding)}>
-        {adding ? `× ${t('close')}` : `+ ${t('add')}`}
-      </button>
-    </div>
-
-    {#if adding}
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div
-        class="panel addp"
-        class:over={dragOver}
-        ondragover={(e) => {
-          e.preventDefault();
-          dragOver = true;
-        }}
-        ondragleave={() => (dragOver = false)}
-        ondrop={onDrop}
-      >
-        <div class="inner">
-          <div class="field">
-            <label for="add-title">{t('title_opt')}</label>
-            <input id="add-title" type="text" bind:value={addTitle} />
-          </div>
-          <div class="field">
-            <label for="add-text">{t('paste_label')}</label>
-            <textarea id="add-text" bind:value={addText} placeholder={t('paste_ph')}></textarea>
-          </div>
-          <button class="btn" type="button" onclick={addPaste} disabled={!!busy || !addText.trim()}>
-            {t('add_text')} →
-          </button>
-          <div class="or">{t('auth_or')}</div>
-          <div class="field">
-            <label for="add-url">{t('url_label')}</label>
-            <div class="urlrow">
-              <input id="add-url" type="url" bind:value={importLink} placeholder="https://…" />
-              <button class="btn" type="button" onclick={importFromUrl} disabled={!!busy || !importLink.trim()}>
-                {t('import_url')} →
-              </button>
-            </div>
-          </div>
-          <div class="or">{t('auth_or')}</div>
-          <div class="drop" class:over={dragOver}>
-            {t('drop_file')}
-            <button class="btn ghost" type="button" onclick={() => fileInput?.click()} disabled={!!busy}>
-              {t('choose_file')}
-            </button>
-            <input
-              type="file"
-              accept="application/pdf,.pdf,.epub,.txt,.md,application/epub+zip,text/plain"
-              hidden
-              bind:this={fileInput}
-              onchange={onFileChange}
-            />
-          </div>
-          {#if shelf.length > 0}
-            <div class="or">{t('from_catalog')}</div>
-            <div class="shelf">
-              {#each shelf as s (s.slug)}
-                <button class="shelfrow" type="button" onclick={() => addFromShelf(s.slug)} disabled={!!busy}>
-                  <span class="t">{s.title}</span>
-                  <span class="a">{s.author}</span>
-                  <span class="m">{num(s.word_count)} →</span>
+    {#if trashItems.length > 0}
+      <div class="trashsec">
+        <button class="trashhead" type="button" onclick={() => (trashOpen = !trashOpen)}>
+          <svg class="tcan" viewBox="0 0 16 16" aria-hidden="true">
+            <path class="lid" d="M2.6 4.6h10.8M6.1 4.4V2.9h3.8v1.5" />
+            <path class="bin" d="M4.1 6.6l.5 7.9h6.8l.5-7.9" />
+            <path class="slats" d="M6.5 8.6v3.9M8 8.6v3.9M9.5 8.6v3.9" />
+          </svg>
+          {t('trash_k')} ({trashItems.length})
+          <span class="tw">{trashOpen ? '▾' : '▸'}</span>
+        </button>
+        {#if trashOpen}
+          <div class="trashlist">
+            {#each trashItems as item (item.id)}
+              <div class="trashrow">
+                <span class="tt">{item.title}</span>
+                <span class="te">{daysLeft(item)} {t('days_left')}</span>
+                <button class="linklike" type="button" onclick={() => doRestore(item.id)}>
+                  ↺ {t('restore')}
                 </button>
-              {/each}
-            </div>
-          {/if}
-        </div>
+                <button class="linklike purge" type="button" onclick={() => doPurge(item.id)}>
+                  {t('purge_now')}
+                </button>
+              </div>
+            {/each}
+            <div class="trashnote">{t('trash_note')}</div>
+          </div>
+        {/if}
       </div>
     {/if}
 
@@ -434,3 +431,16 @@
     </div>
   {/if}
 </div>
+
+{#if wizardOpen}
+  <Wizard
+    onRead={(book, tl) => {
+      wizardOpen = false;
+      onRead(book, tl);
+    }}
+    onClose={() => {
+      wizardOpen = false;
+      void load();
+    }}
+  />
+{/if}

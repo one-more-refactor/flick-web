@@ -40,6 +40,39 @@ const DICT: Dict = {
   best_day_k: { en: 'best day', de: 'bester Tag' },
   start_here: { en: 'start here', de: 'starte hier' },
   new_k: { en: 'new', de: 'neu' },
+  // add wizard (v0.4.3)
+  wiz_source_q: { en: 'Where from?', de: 'Woher?' },
+  src_paste: { en: 'Paste text', de: 'Text einfügen' },
+  src_paste_d: { en: 'drop in any text', de: 'beliebigen Text einfügen' },
+  src_file: { en: 'File', de: 'Datei' },
+  src_file_d: { en: 'PDF · EPUB · TXT · MD', de: 'PDF · EPUB · TXT · MD' },
+  src_url: { en: 'Web link', de: 'Web-Link' },
+  src_url_d: { en: 'article or page URL', de: 'Artikel- oder Seiten-URL' },
+  src_cloud: { en: 'Cloud storage', de: 'Cloud-Speicher' },
+  src_cloud_d: { en: 'Dropbox · Drive · OneDrive', de: 'Dropbox · Drive · OneDrive' },
+  src_catalog: { en: 'Catalog', de: 'Katalog' },
+  src_catalog_d: { en: 'free classics, one tap', de: 'freie Klassiker, ein Tipp' },
+  wiz_cloud_hint: {
+    en: 'paste a public share link — the file is fetched directly',
+    de: 'öffentlichen Freigabe-Link einfügen — die Datei wird direkt geladen',
+  },
+  wiz_cloud_bad: {
+    en: 'that does not look like a Dropbox / Drive / OneDrive share link',
+    de: 'das sieht nicht nach einem Dropbox-/Drive-/OneDrive-Link aus',
+  },
+  tags_label: { en: 'Tags (optional, comma-separated)', de: 'Tags (optional, Komma-getrennt)' },
+  wiz_go: { en: 'Add & read', de: 'Hinzufügen & lesen' },
+  // trash bin (v0.4.3)
+  trash_k: { en: 'trash', de: 'Papierkorb' },
+  trash_note: {
+    en: 'kept for 30 days, then gone for good',
+    de: '30 Tage aufbewahrt, dann endgültig weg',
+  },
+  restore: { en: 'restore', de: 'wiederherstellen' },
+  purge_now: { en: 'delete now', de: 'jetzt löschen' },
+  days_left: { en: 'days left', de: 'Tage übrig' },
+  tag_all: { en: 'all', de: 'alle' },
+  edit_tags: { en: 'edit tags', de: 'Tags bearbeiten' },
 
   // landing
   start_reading: { en: 'Start reading', de: 'Loslesen' },

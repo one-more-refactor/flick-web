@@ -514,6 +514,8 @@ footer.app .wrap {
   margin-bottom: 26px;
 }
 .rcards.solo { grid-template-columns: 1fr; }
+/* a lone second card takes the full row (no empty grid slot) */
+.rcard:nth-child(2):last-child { grid-column: 1 / -1; }
 .rcard {
   grid-column: span 1;
   display: flex;
@@ -999,4 +1001,219 @@ input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-of
   .rcard { padding: 18px 18px 16px; }
   .lang-opt { padding: 10px 14px; }
   .search { padding: 14px 14px; }
+}
+
+/* ---------- v0.4.3: in-row progress, trash bin, tags, add wizard ---------- */
+
+/* progress lives in the row itself: hairline accent along the bottom */
+.rowbook { position: relative; overflow: hidden; }
+.rowbook .rprog {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.7;
+  pointer-events: none;
+  transition: width 400ms var(--ease);
+}
+
+/* boxed y/n keys — real targets (the old inline links overlapped on touch) */
+.armq { flex: none; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--accent); }
+.key {
+  min-width: 36px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 12px;
+  transition: background 140ms, color 140ms, transform 120ms;
+}
+.key:hover { background: var(--accent); color: var(--bg); }
+.key:active { transform: translateY(1px); }
+.key.yes { background: var(--accent); color: var(--bg); }
+.key.yes:hover { background: transparent; color: var(--accent); }
+
+/* fly to the bin */
+.rowbook.bye {
+  animation: bye 430ms var(--ease) forwards;
+  pointer-events: none;
+}
+@keyframes bye {
+  0% { max-height: 90px; }
+  30% { transform: translateX(12px); opacity: 1; }
+  100% {
+    transform: translateX(55%);
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top-color: transparent;
+  }
+}
+
+/* tag filter bar */
+.tagbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.tagchip {
+  border: 1px solid var(--line);
+  padding: 5px 11px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  transition: border-color 140ms, color 140ms, background 140ms, transform 140ms var(--ease);
+}
+.tagchip i { font-style: normal; font-weight: 400; margin-left: 6px; opacity: 0.7; }
+.tagchip:hover { border-color: var(--accent); color: var(--ink); transform: translateY(-1px); }
+.tagchip.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.rowtags { color: var(--accent); margin-left: 8px; }
+
+/* inline tag editor + the # button */
+.rtag {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--dim);
+  border: 1px solid transparent;
+  transition: color 140ms, border-color 140ms, background 140ms;
+}
+.rtag:hover { color: var(--accent); border-color: var(--accent); }
+/* quiet until the row is engaged (always visible on touch) */
+@media (hover: hover) {
+  .rowbook .rtag { opacity: 0; transition: opacity 140ms, color 140ms, border-color 140ms; }
+  .rowbook:hover .rtag, .rowbook:focus-within .rtag { opacity: 1; }
+}
+.taginput {
+  flex: none;
+  width: 210px;
+  max-width: 45vw;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--accent);
+  padding: 7px 10px;
+  font-size: 12px;
+}
+.taginput:focus { outline: none; }
+
+/* the real ADD button lives in the ALL BOOKS header (UX: visible without scrolling) */
+.listcap { align-items: center; }
+.listcap .addbtn { padding: 8px 14px; font-size: 11px; }
+.addbtn { font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* trash bin section */
+.trashsec { margin-top: 18px; border: 1px dashed var(--line); }
+.trashhead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  transition: color 140ms;
+}
+.trashhead:hover { color: var(--ink); }
+.trashhead .tcan { width: 14px; height: 14px; }
+.trashhead .tw { margin-left: auto; color: var(--accent); }
+.trashlist { border-top: 1px dashed var(--line); padding: 4px 0 0; }
+.trashrow { display: flex; align-items: baseline; gap: 14px; padding: 9px 14px; font-size: 12px; }
+.trashrow .tt {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  text-decoration: line-through;
+}
+.trashrow .te { font-size: 10px; color: var(--dim); white-space: nowrap; }
+.trashrow .purge { color: color-mix(in srgb, var(--accent) 70%, var(--dim)); }
+.trashnote { padding: 8px 14px 11px; font-size: 10px; color: var(--dim); letter-spacing: 0.06em; }
+
+/* ---------- add wizard: full-screen guided flow ---------- */
+.wiz {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: viewfade 180ms ease-out;
+}
+.wtop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 22px 28px 10px;
+}
+.wstep { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: var(--accent); }
+.wstep i { font-style: normal; font-weight: 400; color: var(--dim); }
+.wq { font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+.wx {
+  margin-left: auto;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--dim);
+  border: 1px solid var(--line);
+  transition: color 140ms, background 140ms, border-color 140ms;
+}
+.wx:hover { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+.wbody { flex: 1; width: 100%; max-width: 760px; margin: 0 auto; padding: 12px 28px 20px; }
+.wopts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.wopt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 18px;
+  opacity: 0;
+  transform: translateY(7px);
+  animation: fu 380ms var(--ease) calc(var(--i) * 50ms) forwards;
+  transition: border-color 160ms, transform 160ms var(--ease);
+}
+.wopt:hover { border-color: var(--accent); transform: translateY(-2px); }
+.wopt:active { transform: translateY(0); }
+.wopt .wicon { font-size: 19px; color: var(--accent); line-height: 1; }
+.wopt .wname { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; }
+.wopt .wdesc { font-size: 11px; color: var(--dim); }
+.wopt .war { position: absolute; right: 16px; top: 16px; color: var(--dim); transition: transform 180ms var(--ease), color 140ms; }
+.wopt:hover .war { transform: translateX(4px); color: var(--accent); }
+.wform { display: flex; flex-direction: column; gap: 16px; }
+.wform textarea { min-height: 180px; }
+.drop.big { padding: 46px 20px; }
+.wshelf { border: 1px solid var(--line); background: var(--panel); }
+.wfoot { width: 100%; max-width: 760px; margin: 0 auto; padding: 12px 28px calc(20px + env(safe-area-inset-bottom)); }
+
+@media (max-width: 640px) {
+  .wopts { grid-template-columns: 1fr; }
+  .taginput { width: 150px; }
+}
+@media (pointer: coarse) {
+  .rtag { width: 44px; height: 44px; margin: -8px -4px -8px 0; }
+  .key { min-width: 46px; height: 40px; }
 }

@@ -60,6 +60,18 @@ export interface Book {
   favicon: string | null;
   excerpt: string | null;
   category: string | null;
+  /** User tags (auto-seeded from the category at creation, v0.4.3). */
+  tags: string[];
+}
+
+/** A book sitting in the trash bin (contract v0.4.3). */
+export interface TrashItem {
+  id: string;
+  title: string;
+  author: string | null;
+  word_count: number;
+  deleted_at: number;
+  expires_at: number;
 }
 
 /** `[text, orp_index, weight]` — array-of-arrays keeps payloads small. */
@@ -247,8 +259,51 @@ export const savePosition = (
     json(read && read > 0 ? { position, read, day } : { position }, 'PUT'),
   );
 
+/** Soft delete: the book moves to the trash (restorable ~30 days). */
 export const deleteBook = (id: string): Promise<void> =>
   request<void>(`/books/${id}`, { method: 'DELETE' });
+
+export const trash = (): Promise<{ items: TrashItem[]; retention_days: number }> =>
+  request<{ items: TrashItem[]; retention_days: number }>('/books/trash');
+
+export const restoreBook = (id: string): Promise<void> =>
+  request<void>(`/books/${id}/restore`, { method: 'POST' });
+
+export const purgeBook = (id: string): Promise<void> =>
+  request<void>(`/books/${id}/purge`, { method: 'DELETE' });
+
+export const setTags = (id: string, tags: string[]): Promise<Book> =>
+  request<Book>(`/books/${id}/tags`, json({ tags }, 'PUT'));
+
+/** Rewrite a public Dropbox / Google Drive / OneDrive share link into a
+ *  direct-download URL for POST /api/import/url. Returns null when the link
+ *  is not a recognized cloud share. (Contract v0.4.3 — no OAuth, no keys.) */
+export function cloudDirectUrl(link: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(link.trim());
+  } catch {
+    return null;
+  }
+  const host = u.hostname.toLowerCase();
+  if (host === 'www.dropbox.com' || host === 'dropbox.com') {
+    u.searchParams.set('dl', '1');
+    return u.toString();
+  }
+  if (host === 'drive.google.com') {
+    const m = u.pathname.match(/\/file\/d\/([^/]+)/);
+    const fileId = m?.[1] ?? u.searchParams.get('id');
+    return fileId
+      ? `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`
+      : null;
+  }
+  if (host === '1drv.ms' || host.endsWith('.sharepoint.com') || host === 'onedrive.live.com') {
+    // OneDrive share-URL → direct content via the shares API (base64url token).
+    const token = btoa(u.toString()).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return `https://api.onedrive.com/v1.0/shares/u!${token}/root/content`;
+  }
+  return null;
+}
 
 // ---------- catalog ----------
 
