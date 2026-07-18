@@ -11,6 +11,7 @@
     user,
     onExit,
     onWpm,
+    ephemeral = false,
   }: {
     book: Book;
     timeline: Timeline;
@@ -18,6 +19,8 @@
     onExit: () => void;
     /** Reports WPM changes upward so the in-memory user stays in sync. */
     onWpm?: (wpm: number) => void;
+    /** Read-only share: no position save, no session log, no library copy. */
+    ephemeral?: boolean;
   } = $props();
 
   // The reader is mounted fresh per book (App keys the view), so capturing the
@@ -36,8 +39,8 @@
   // svelte-ignore state_referenced_locally
   let wpm = $state(clampWpm(user.settings.wpm));
 
-  // ---- reader customisation (v0.6): per-device, localStorage ----
-  type ReaderPrefs = { font: 's' | 'm' | 'l' | 'xl'; guides: boolean };
+  // ---- reader customisation (v0.6, context v0.8): per-device, localStorage ----
+  type ReaderPrefs = { font: 's' | 'm' | 'l' | 'xl'; guides: boolean; context: boolean };
   const PREFS_KEY = 'flick.reader';
   const FONT_MULT: Record<ReaderPrefs['font'], number> = { s: 0.85, m: 1, l: 1.18, xl: 1.4 };
   function loadPrefs(): ReaderPrefs {
@@ -46,9 +49,10 @@
       return {
         font: ['s', 'm', 'l', 'xl'].includes(raw.font) ? raw.font : 'm',
         guides: raw.guides !== false,
+        context: raw.context === true,
       };
     } catch {
-      return { font: 'm', guides: true };
+      return { font: 'm', guides: true, context: false };
     }
   }
   let prefs = $state<ReaderPrefs>(loadPrefs());
@@ -154,6 +158,7 @@
   let lastSent = book.position;
 
   async function savePosition() {
+    if (ephemeral) return; // read-only share: nothing to persist
     const pos = finished ? total : index;
     const read = Math.min(consumed, 500);
     if (pos === lastSent && read === 0) return;
@@ -169,6 +174,7 @@
 
   /** Running-app-style session summary, once per reader visit. */
   function logSession() {
+    if (ephemeral) return; // read-only share: not part of anyone's stats
     if (sessionStart === 0 || activeMs < 10_000 || sessionWords === 0) return;
     const avg = Math.round(sessionWords / (activeMs / 60_000));
     void api
@@ -199,6 +205,26 @@
     while (j >= 0 && !isBoundary(j)) j -= 1;
     return j + 1;
   }
+
+  /** Last word (inclusive) of the sentence containing `from`. */
+  function sentenceEnd(from: number): number {
+    let j = from;
+    while (j < total && !isBoundary(j)) j += 1;
+    return Math.min(j, total - 1);
+  }
+
+  // ---- context/sentence view (v0.8): the live word set in its sentence, so
+  // the eye keeps its place. Bounded around the active word so a very long
+  // sentence still fits and the current word is always shown.
+  const CTX_SPAN = 16;
+  const ctxWindow = $derived.by(() => {
+    if (!prefs.context) return [] as { i: number; text: string }[];
+    const s = Math.max(sentenceStart(index), index - CTX_SPAN);
+    const e = Math.min(sentenceEnd(index), index + CTX_SPAN);
+    const out: { i: number; text: string }[] = [];
+    for (let i = s; i <= e; i++) out.push({ i, text: words[i]?.[0] ?? '' });
+    return out;
+  });
 
   function back() {
     const start = sentenceStart(index);
@@ -347,7 +373,11 @@
   const fillPct = $derived(total > 0 ? ((index + 1) / total) * 100 : 0);
 </script>
 
-<svelte:window onkeydown={onKey} onclick={onWindowClick} />
+<svelte:window
+  onkeydown={onKey}
+  onclick={onWindowClick}
+  onpagehide={() => void savePosition()}
+/>
 <svelte:document
   onvisibilitychange={() => {
     // A hidden tab pauses cleanly instead of silently burning words.
@@ -358,7 +388,7 @@
 <div class="wrap readerview" class:zen>
   <div class="rhead">
     <button class="backbtn" type="button" onclick={exit}>← {t('library_link')}</button>
-    <span class="btitle">{book.title}</span>
+    <span class="btitle">{book.title}{#if ephemeral}<i class="robadge">{t('share_read_opt')}</i>{/if}</span>
     <button class="zenbtn" type="button" onclick={() => (zen = !zen)} title="zen [z]">
       {t('zen_k')}_
     </button>
@@ -384,6 +414,19 @@
       </div>
     </div>
 
+    {#if ctxWindow.length > 0}
+      <div class="context" aria-hidden="true">
+        {#each ctxWindow as w (w.i)}
+          <button
+            class="cw"
+            class:on={w.i === index}
+            type="button"
+            tabindex="-1"
+            onclick={() => seek(w.i)}>{w.text}</button>
+        {/each}
+      </div>
+    {/if}
+
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="progress scrub"
@@ -403,8 +446,24 @@
     </div>
 
     <div class="controls">
-      <button class="btn" type="button" onclick={toggle}>
-        {playing ? t('pause') : finished ? t('replay') : t('play')}
+      <button
+        class="btn playbtn"
+        type="button"
+        onclick={toggle}
+        aria-label={playing ? t('pause') : finished ? t('replay') : t('play')}
+      >
+        <span class="picon" class:playing class:finished>
+          <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true">
+            <polygon points="6,4 20,12 6,20" />
+          </svg>
+          <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="6" y="4" width="4" height="16" />
+            <rect x="14" y="4" width="4" height="16" />
+          </svg>
+          <svg class="i-replay" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5V1L6 6l6 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z" />
+          </svg>
+        </span>
       </button>
       <div class="wpm-wrap">
         <div class="sliderbox">
@@ -463,6 +522,15 @@
                 type="button"
                 onclick={() => (prefs.guides = !prefs.guides)}
               >{prefs.guides ? 'ON' : 'OFF'}</button>
+            </div>
+            <div class="crow">
+              <span class="ck">{t('ctx_k')}</span>
+              <button
+                class="cchip"
+                class:on={prefs.context}
+                type="button"
+                onclick={() => (prefs.context = !prefs.context)}
+              >{prefs.context ? 'ON' : 'OFF'}</button>
             </div>
             <div class="crow">
               <span class="ck">{t('zen_k')}</span>

@@ -16,7 +16,9 @@
     .then((w) => (data = w))
     .catch((e) => (error = e instanceof Error ? e.message : t('err_generic')));
 
-  const locale = $derived(i18n.resolved === 'de' ? 'de-DE' : 'en-US');
+  const locale = $derived(
+    i18n.resolved === 'de' ? 'de-DE' : i18n.resolved === 'es' ? 'es-ES' : 'en-US',
+  );
 
   function monthName(m: number): string {
     return new Date(2026, m - 1, 15).toLocaleDateString(locale, { month: 'long' });

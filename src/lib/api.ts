@@ -6,7 +6,7 @@ export type Mode = 'auto' | 'light' | 'dark';
 /** Server `settings.accent` slugs. The client maps these onto the six named
  *  themes (paper/signal/sage/tide/dusk/noir) — see theme.svelte.ts. */
 export type Accent = 'red' | 'ember' | 'acid' | 'cyan' | 'violet' | 'mono';
-export type Lang = 'auto' | 'en' | 'de';
+export type Lang = 'auto' | 'en' | 'de' | 'es';
 
 export interface Settings {
   wpm: number;
@@ -34,6 +34,8 @@ export interface User {
   pro_active?: boolean;
   /** Remaining credit-based Pro days. */
   pro_days?: number;
+  /** Square profile picture as a `data:` URL, or null (v0.8). */
+  avatar?: string | null;
   settings: Settings;
   /** Present from server v0.4 on. */
   uploads?: UploadStatus;
@@ -49,6 +51,8 @@ export interface UserPatch {
   username?: string;
   name?: string;
   onboarded?: boolean;
+  /** A `data:image` URL to set, or `''` to clear the avatar (v0.8). */
+  avatar?: string;
   settings?: Partial<Settings>;
 }
 
@@ -290,10 +294,20 @@ export const purgeBook = (id: string): Promise<void> =>
 export const setTags = (id: string, tags: string[]): Promise<Book> =>
   request<Book>(`/books/${id}/tags`, json({ tags }, 'PUT'));
 
-// ---------- share links (v0.6) ----------
+// ---------- share links (v0.6, share_mode v0.8) ----------
 
-export const shareBook = (id: string): Promise<{ token: string; path: string }> =>
-  request<{ token: string; path: string }>(`/books/${id}/share`, { method: 'POST' });
+/** Recipient rights on a share link: copy into their library, or read-only. */
+export type ShareMode = 'import' | 'read';
+
+export interface ShareLink {
+  token: string;
+  path: string;
+  mode: ShareMode;
+}
+
+/** Mint (or update) a share link; `mode` flips read-only ↔ importable. */
+export const shareBook = (id: string, mode: ShareMode = 'import'): Promise<ShareLink> =>
+  request<ShareLink>(`/books/${id}/share`, json({ mode }));
 
 export const unshareBook = (id: string): Promise<void> =>
   request<void>(`/books/${id}/share`, { method: 'DELETE' });
@@ -303,6 +317,8 @@ export interface SharedInfo {
   author: string | null;
   word_count: number;
   category: string | null;
+  /** v0.8: whether the recipient may import a copy or only read it. */
+  mode: ShareMode;
 }
 
 export const sharedInfo = (token: string): Promise<SharedInfo> =>
@@ -310,6 +326,10 @@ export const sharedInfo = (token: string): Promise<SharedInfo> =>
 
 export const sharedImport = (token: string): Promise<Book> =>
   request<Book>(`/shared/${token}/import`, { method: 'POST' });
+
+/** The playable timeline behind a read-only share link (public, no auth). */
+export const sharedTimeline = (token: string): Promise<Timeline> =>
+  request<Timeline>(`/shared/${token}/timeline`);
 
 /** Rewrite a public Dropbox / Google Drive / OneDrive share link into a
  *  direct-download URL for POST /api/import/url. Returns null when the link

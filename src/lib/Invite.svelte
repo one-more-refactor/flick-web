@@ -99,17 +99,13 @@
       </span>
     </div>
 
-    <div class="premfaq">
-      <div class="faq" style="--i:0">
-        <div class="fq">{t('inv_qualified')}?</div>
-        <div class="fa">
-          {t('inv_sub')}
-        </div>
-      </div>
-      <div class="faq" style="--i:1">
-        <div class="fq">{t('prem_q1')}</div>
-        <div class="fa">{t('prem_a1')}</div>
-      </div>
+    <div class="invsteps">
+      <div class="ishead">{t('inv_how')}</div>
+      <ol>
+        <li><span class="isn">1</span>{t('inv_step1')}</li>
+        <li><span class="isn">2</span>{t('inv_step2')}</li>
+        <li><span class="isn">3</span>{t('inv_step3')}</li>
+      </ol>
     </div>
   {/if}
 </div>

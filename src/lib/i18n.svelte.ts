@@ -4,6 +4,7 @@
 
 import type { Lang } from './api';
 import { queueSettings } from './settings';
+import { ES } from './i18n.es';
 
 const LANG_KEY = 'flick.lang';
 
@@ -308,24 +309,113 @@ const DICT: Dict = {
   ob_skip: { en: 'skip', de: 'überspringen' },
   ob_back: { en: 'back', de: 'zurück' },
 
+  // v0.8: reader context/sentence view
+  ctx_k: { en: 'sentence', de: 'Satz' },
+  read_only_note: {
+    en: 'read-only — not saved to your library',
+    de: 'nur lesen — nicht in deiner Bibliothek gespeichert',
+  },
+
+  // v0.8: share menu
+  share_can_do: { en: 'what can they do?', de: 'was dürfen sie?' },
+  share_import_opt: { en: 'add to their library', de: 'in ihre Bibliothek' },
+  share_read_opt: { en: 'read only', de: 'nur lesen' },
+  share_native: { en: 'share…', de: 'teilen…' },
+  share_copy: { en: 'copy link', de: 'Link kopieren' },
+  share_with_friend: { en: 'invite a friend to flick', de: 'Freund zu flick einladen' },
+  share_title: { en: 'Share', de: 'Teilen' },
+
+  // v0.8: register perks
+  reg_perks_head: { en: 'your account keeps', de: 'dein Konto sichert' },
+  reg_perk_sync: {
+    en: 'library, position & speed on every device',
+    de: 'Bibliothek, Position & Tempo auf jedem Gerät',
+  },
+  reg_perk_streak: { en: 'your streak and daily goal', de: 'deine Serie und dein Tagesziel' },
+  reg_perk_stats: {
+    en: 'full stats, history & yearly wrapped',
+    de: 'volle Statistik, Verlauf & Jahresrückblick',
+  },
+  reg_perk_social: {
+    en: 'friends, invites & Pro credits',
+    de: 'Freunde, Einladungen & Pro-Guthaben',
+  },
+
+  // v0.8: onboarding avatar
+  ob_avatar: { en: 'Add a photo', de: 'Füg ein Foto hinzu' },
+  ob_avatar_hint: { en: 'optional — a small square picture', de: 'optional — ein kleines quadratisches Bild' },
+  ob_avatar_pick: { en: 'choose image', de: 'Bild wählen' },
+  ob_avatar_remove: { en: 'remove', de: 'entfernen' },
+
+  // v0.8: account menu
+  account_k: { en: 'account', de: 'Konto' },
+
+  // v0.8: invite steps (readability)
+  inv_step1: { en: 'share your invite link', de: 'teile deinen Einladungslink' },
+  inv_step2: { en: 'they join and really read', de: 'sie treten bei und lesen wirklich' },
+  inv_step3: { en: 'you both get 30 days of Pro', de: 'ihr bekommt beide 30 Tage Pro' },
+  inv_how: { en: 'how it works', de: 'so geht’s' },
+
+  // v0.8: read-only share landing
+  shared_read_only: {
+    en: 'read-only — you can read it here, but not keep a copy',
+    de: 'nur lesen — hier lesbar, aber nicht speicherbar',
+  },
+  shared_read_go: { en: 'Read now', de: 'Jetzt lesen' },
+
+  // v0.8: landing redesign (how-it-works, numbers, spec sheet)
+  lp_how_lead: { en: 'how it works', de: 'so funktioniert’s' },
+  lp_how1_t: { en: 'one word at a time', de: 'ein Wort nach dem anderen' },
+  lp_how1_d: {
+    en: 'No pages, no columns, no lines to track. The text comes to you — one word, always in the same place.',
+    de: 'Keine Seiten, keine Spalten, keine Zeilen. Der Text kommt zu dir — ein Wort, immer an derselben Stelle.',
+  },
+  lp_how2_t: { en: 'the pivot letter', de: 'der Fixpunkt' },
+  lp_how2_d: {
+    en: 'One letter is set in the accent — the optimal recognition point. Every word lands aligned to it, so your eye locks on and never travels.',
+    de: 'Ein Buchstabe steht in der Akzentfarbe — der optimale Erkennungspunkt. Jedes Wort richtet sich daran aus, dein Auge rastet ein und wandert nie.',
+  },
+  lp_how3_t: { en: 'your pace', de: 'dein Tempo' },
+  lp_how3_d: {
+    en: 'Push the speed until the words just barely break apart, then back off a notch. That is your pace — and it climbs with practice.',
+    de: 'Dreh das Tempo hoch, bis die Wörter gerade zu zerfallen beginnen, dann geh einen Tick zurück. Das ist dein Tempo — und es wächst mit Übung.',
+  },
+  lp_num_lead: { en: 'the numbers', de: 'die Zahlen' },
+  lp_num_avg: { en: 'the average reader', de: 'der Durchschnittsleser' },
+  lp_num_demo: { en: 'the demo above', de: 'die Demo oben' },
+  lp_num_saccades: { en: 'your eye stays put', de: 'dein Auge bleibt still' },
+  lp_spec_engine_k: { en: 'engine', de: 'Engine' },
+  lp_spec_engine_v: { en: 'rust + svelte · AGPL open source', de: 'Rust + Svelte · AGPL, quelloffen' },
+  lp_spec_privacy_k: { en: 'privacy', de: 'Privatsphäre' },
+  lp_spec_privacy_v: {
+    en: 'self-hostable — your library stays yours',
+    de: 'selbst hostbar — deine Bibliothek bleibt deine',
+  },
+  lp_spec_formats_k: { en: 'formats', de: 'Formate' },
+  lp_spec_formats_v: { en: 'pdf · epub · txt · md · url · paste', de: 'pdf · epub · txt · md · url · einfügen' },
+  lp_spec_source_k: { en: 'source', de: 'Quellcode' },
+
   // errors
   err_generic: { en: 'request failed', de: 'Anfrage fehlgeschlagen' },
 };
 
-function browserLang(): 'en' | 'de' {
-  return navigator.language?.toLowerCase().startsWith('de') ? 'de' : 'en';
+function browserLang(): 'en' | 'de' | 'es' {
+  const l = navigator.language?.toLowerCase() ?? '';
+  if (l.startsWith('de')) return 'de';
+  if (l.startsWith('es')) return 'es';
+  return 'en';
 }
 
 function storedLang(): Lang {
   const v = localStorage.getItem(LANG_KEY);
-  return v === 'en' || v === 'de' ? v : 'auto';
+  return v === 'en' || v === 'de' || v === 'es' ? v : 'auto';
 }
 
 class I18nState {
   lang = $state<Lang>(storedLang());
   private synced = false;
 
-  get resolved(): 'en' | 'de' {
+  get resolved(): 'en' | 'de' | 'es' {
     return this.lang === 'auto' ? browserLang() : this.lang;
   }
 
@@ -346,6 +436,9 @@ class I18nState {
   }
 
   t = (key: string): string => {
+    // Spanish lives in a merged map (ES over the en fallback); en/de come
+    // straight from DICT.
+    if (this.resolved === 'es') return ES[key] ?? DICT[key]?.en ?? key;
     const entry = DICT[key];
     if (!entry) return key;
     return entry[this.resolved];

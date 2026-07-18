@@ -19,6 +19,46 @@
   let busy = $state(false);
   let error = $state<string | null>(null);
 
+  // ---- optional profile picture (v0.8): downscaled to a small square data URL ----
+  let avatar = $state<string | null>(null);
+  let avInput: HTMLInputElement | undefined = $state();
+
+  /** Center-crop + downscale to a `size`×`size` JPEG data URL (well under cap). */
+  function squareDataUrl(file: File, size: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const s = Math.min(img.width, img.height);
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('no canvas'));
+        ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('bad image'));
+      };
+      img.src = url;
+    });
+  }
+
+  async function pickAvatar(e: Event) {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      avatar = await squareDataUrl(file, 160);
+    } catch {
+      error = t('err_generic');
+    }
+  }
+
   // ---- step 1: handle, prefilled from name or email local part ----
   function sanitize(s: string): string {
     return s.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 24);
@@ -33,6 +73,7 @@
     return null;
   }
   const nameErr = $derived(usernameError(username));
+  const initial = $derived((username || '?').trim().charAt(0).toUpperCase() || '?');
 
   // ---- step 2: speed, chosen against a live word-stream ----
   // svelte-ignore state_referenced_locally
@@ -43,8 +84,11 @@
     busy = true;
     error = null;
     try {
+      const base = withProfile
+        ? { username, settings: { wpm }, onboarded: true }
+        : { onboarded: true };
       const updated = await api.updateMe(
-        withProfile ? { username, settings: { wpm }, onboarded: true } : { onboarded: true },
+        withProfile && avatar ? { ...base, avatar } : base,
       );
       onDone(updated);
     } catch (err) {
@@ -81,6 +125,26 @@
 
     {#if step === 1}
       <h2>{t('ob_handle')}</h2>
+      <div class="obavatar">
+        <button class="avpick" type="button" onclick={() => avInput?.click()} aria-label={t('ob_avatar')}>
+          {#if avatar}<img src={avatar} alt="" />{:else}<span>{initial}</span>{/if}
+        </button>
+        <div class="avmeta">
+          <div class="avlab">{t('ob_avatar')}</div>
+          <div class="avactions">
+            <button class="linklike" type="button" onclick={() => avInput?.click()}>
+              {t('ob_avatar_pick')}
+            </button>
+            {#if avatar}
+              <button class="linklike" type="button" onclick={() => (avatar = null)}>
+                {t('ob_avatar_remove')}
+              </button>
+            {/if}
+          </div>
+          <div class="fhint">{t('ob_avatar_hint')}</div>
+        </div>
+        <input type="file" accept="image/*" hidden bind:this={avInput} onchange={pickAvatar} />
+      </div>
       <form onsubmit={submit}>
         <div class="field">
           <input

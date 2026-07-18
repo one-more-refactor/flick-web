@@ -234,6 +234,15 @@
           {busy ? `${t('working')}…` : `${t('auth_create')} →`}
         </button>
       </form>
+      <div class="regperks">
+        <div class="rpk">{t('reg_perks_head')}</div>
+        <ul>
+          <li>{t('reg_perk_sync')}</li>
+          <li>{t('reg_perk_streak')}</li>
+          <li>{t('reg_perk_stats')}</li>
+          <li>{t('reg_perk_social')}</li>
+        </ul>
+      </div>
       <div class="navline">
         <button class="linklike" type="button" onclick={() => go('email')}>← {t('auth_back')}</button>
       </div>

@@ -9,10 +9,14 @@
   let {
     token,
     onStart,
+    onRead,
     onBack,
   }: {
     token: string;
+    /** Import mode: copy into the caller's library, then read. */
     onStart: (token: string) => Promise<void>;
+    /** Read-only mode: play the public timeline without keeping a copy. */
+    onRead: (token: string, info: SharedInfo) => Promise<void>;
     onBack: () => void;
   } = $props();
 
@@ -28,11 +32,12 @@
     .catch(() => (gone = true));
 
   async function start() {
-    if (busy) return;
+    if (busy || !info) return;
     busy = true;
     error = null;
     try {
-      await onStart(token);
+      if (info.mode === 'read') await onRead(token, info);
+      else await onStart(token);
     } catch (err) {
       error = err instanceof Error ? err.message : t('err_generic');
       busy = false;
@@ -40,6 +45,7 @@
   }
 
   const mins = $derived(info ? Math.max(1, Math.round(info.word_count / 350)) : 0);
+  const readOnly = $derived(info?.mode === 'read');
 </script>
 
 <div class="wrap sharedview">
@@ -60,9 +66,9 @@
         {t('words')} · ~{mins} {t('min')}
       </p>
       <button class="btn sgo" type="button" onclick={start} disabled={busy}>
-        {busy ? `${t('working')}…` : `${t('start_reading')} →`}
+        {busy ? `${t('working')}…` : `${readOnly ? t('shared_read_go') : t('start_reading')} →`}
       </button>
-      <p class="snote">{t('shared_note')}</p>
+      <p class="snote">{readOnly ? t('shared_read_only') : t('shared_note')}</p>
     </div>
   {/if}
 </div>

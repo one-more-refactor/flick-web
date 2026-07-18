@@ -87,7 +87,7 @@
 
   function when(s: ReadingSession): string {
     const d = new Date(s.started_at * 1000);
-    return d.toLocaleDateString(i18n.resolved === 'de' ? 'de-DE' : 'en-US', {
+    return d.toLocaleDateString(i18n.resolved === 'de' ? 'de-DE' : i18n.resolved === 'es' ? 'es-ES' : 'en-US', {
       day: '2-digit',
       month: 'short',
     });
@@ -103,7 +103,7 @@
 
   function shortDay(day: string): string {
     const d = new Date(`${day}T12:00:00`);
-    return d.toLocaleDateString(i18n.resolved === 'de' ? 'de-DE' : 'en-US', {
+    return d.toLocaleDateString(i18n.resolved === 'de' ? 'de-DE' : i18n.resolved === 'es' ? 'es-ES' : 'en-US', {
       day: '2-digit',
       month: 'short',
     });

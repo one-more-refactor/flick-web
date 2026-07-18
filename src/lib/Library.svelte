@@ -7,6 +7,7 @@
   import { t } from './i18n.svelte';
   import DotNumber from './DotNumber.svelte';
   import Wizard from './Wizard.svelte';
+  import ShareMenu from './ShareMenu.svelte';
 
   let {
     user,
@@ -15,6 +16,7 @@
     onRead,
     onStats,
     onAuth,
+    onInvite,
   }: {
     user: User;
     who: string | null;
@@ -22,6 +24,7 @@
     onRead: (book: Book, timeline: Timeline) => void;
     onStats: () => void;
     onAuth?: () => void;
+    onInvite?: () => void;
   } = $props();
 
   /** Weekly allowance line, only when the server enforces one (hosted+free). */
@@ -49,21 +52,8 @@
   let tagging = $state<string | null>(null);
   let tagDraft = $state('');
 
-  // share (v0.6): row id whose link was just copied
-  let sharedOk = $state<string | null>(null);
-
-  async function doShare(id: string) {
-    try {
-      const { path } = await api.shareBook(id);
-      await navigator.clipboard.writeText(`${location.origin}${path}`);
-      sharedOk = id;
-      setTimeout(() => {
-        if (sharedOk === id) sharedOk = null;
-      }, 1800);
-    } catch (err) {
-      error = message(err);
-    }
-  }
+  // share (v0.8): the row opens a share popup (permissions + native share)
+  let sharing = $state<Book | null>(null);
 
   // selection mode (v0.6): bulk to-trash and bulk tag-add
   let selecting = $state(false);
@@ -508,12 +498,11 @@
               <span class="pct">{pct(b)}</span>
               <button
                 class="rshare"
-                class:ok={sharedOk === b.id}
                 type="button"
                 aria-label="{t('share_k')}: {b.title}"
-                title={sharedOk === b.id ? t('link_copied') : t('share_k')}
-                onclick={() => doShare(b.id)}
-              >{sharedOk === b.id ? '✓' : '»'}</button>
+                title={t('share_k')}
+                onclick={() => (sharing = b)}
+              >»</button>
               <button
                 class="rtag"
                 type="button"
@@ -586,5 +575,13 @@
       wizardOpen = false;
       void load();
     }}
+  />
+{/if}
+
+{#if sharing}
+  <ShareMenu
+    book={sharing}
+    onClose={() => (sharing = null)}
+    onInvite={onInvite ? () => { sharing = null; onInvite?.(); } : undefined}
   />
 {/if}

@@ -25,7 +25,7 @@
     | { name: 'auth' }
     | { name: 'onboarding' }
     | { name: 'library' }
-    | { name: 'reader'; book: Book; timeline: Timeline }
+    | { name: 'reader'; book: Book; timeline: Timeline; ephemeral?: boolean }
     | { name: 'stats' }
     | { name: 'premium' }
     | { name: 'shared'; token: string }
@@ -285,6 +285,30 @@
     onRead(book, tl);
   }
 
+  /** Read-only share: play the public timeline ephemerally — no library copy,
+   *  no position saved, no session logged (contract v0.8). */
+  async function onSharedRead(token: string, info: api.SharedInfo) {
+    const u = user ?? (await startGuest());
+    if (!u) return;
+    const tl = await api.sharedTimeline(token);
+    const book: Book = {
+      id: '',
+      title: info.title,
+      source: 'shared',
+      word_count: info.word_count,
+      position: 0,
+      created_at: Math.floor(Date.now() / 1000),
+      last_read_at: null,
+      author: info.author,
+      url: null,
+      favicon: null,
+      excerpt: null,
+      category: info.category,
+      tags: [],
+    };
+    view = { name: 'reader', book, timeline: tl, ephemeral: true };
+  }
+
   function onAuthed(u: User) {
     adopt(u);
     go(u.guest || u.onboarded ? { name: 'library' } : { name: 'onboarding' }, 'replace');
@@ -342,7 +366,7 @@
     go({ name: 'landing' }, 'replace');
   }
 
-  const LANGS: Lang[] = ['auto', 'en', 'de'];
+  const LANGS: Lang[] = ['auto', 'en', 'de', 'es'];
 
   const who = $derived(
     user ? (user.username ?? (user.guest ? t('guest') : (user.name || user.email))) : null,
@@ -383,13 +407,30 @@
 
   // ---- theme picker popover (moved out of the footer, v0.4.2)
   let themesOpen = $state(false);
+  // ---- account menu (v0.8): the square avatar button opens it
+  let acctOpen = $state(false);
+
+  /** Remaining weekly uploads for the top-bar meter (hosted free plan only). */
+  const uploadsLeft = $derived(
+    edition === 'hosted' && user && user.uploads && user.uploads.limit !== null
+      ? Math.max(0, user.uploads.limit - user.uploads.used)
+      : null,
+  );
+
+  /** First glyph for the avatar placeholder when there's no picture. */
+  const initial = $derived((who ?? '?').trim().charAt(0).toUpperCase() || '?');
 
   function onWindowClick(e: MouseEvent) {
-    if (themesOpen && !(e.target as Element | null)?.closest('.thpick')) themesOpen = false;
+    const el = e.target as Element | null;
+    if (themesOpen && !el?.closest('.thpick')) themesOpen = false;
+    if (acctOpen && !el?.closest('.acctwrap')) acctOpen = false;
   }
 
   function onWindowKey(e: KeyboardEvent) {
-    if (e.key === 'Escape') themesOpen = false;
+    if (e.key === 'Escape') {
+      themesOpen = false;
+      acctOpen = false;
+    }
   }
 
   /** Top-bar GO PREMIUM: the real premium page (v0.5.1). */
@@ -463,7 +504,24 @@
             </span>
           </button>
         {/if}
-        <a class="link brk" href={REPO} target="_blank" rel="noopener">GITHUB<span class="x">↗</span></a>
+        {#if uploadsLeft !== null}
+          <button
+            class="uptop"
+            type="button"
+            onclick={goPremium}
+            title="{uploadsLeft} {t('uploads_left')}"
+            aria-label="{uploadsLeft} {t('uploads_left')}"
+          >
+            <span class="upn">{uploadsLeft}</span>
+            <span class="uparr">↑</span>
+            <span class="upmeter" aria-hidden="true">
+              <i style="width: {Math.min(100, ((user?.uploads?.used ?? 0) / (user?.uploads?.limit || 1)) * 100)}%"></i>
+            </span>
+          </button>
+        {/if}
+        <a class="link brk ghbtn" href={REPO} target="_blank" rel="noopener">
+          <span class="ghstar" aria-hidden="true">★</span>GITHUB<span class="x">↗</span>
+        </a>
         <div class="thpick">
           <button
             class="thbtn"
@@ -475,13 +533,15 @@
           >
             <span class="swd" style="--c:{THEME_SWATCH[themeState.theme]}"></span>
             <span class="thname">{themeState.theme.toUpperCase()}</span>
+            <span class="thcar" class:open={themesOpen} aria-hidden="true">▾</span>
           </button>
           {#if themesOpen}
             <div class="thpanel">
-              {#each THEME_NAMES as th (th)}
+              {#each THEME_NAMES as th, i (th)}
                 <button
                   class="throw"
                   class:on={themeState.theme === th}
+                  style="--i:{i}"
                   type="button"
                   onclick={() => {
                     themeState.setTheme(th);
@@ -513,7 +573,38 @@
             {t('create_account')}
           </button>
         {:else if user}
-          <button class="link" type="button" onclick={onLogout}>{t('logout')}</button>
+          <div class="acctwrap">
+            <button
+              class="avatarbtn"
+              type="button"
+              onclick={() => (acctOpen = !acctOpen)}
+              aria-expanded={acctOpen}
+              aria-label={t('account_k')}
+              title={who}
+            >
+              {#if user.avatar}
+                <img class="avimg" src={user.avatar} alt="" />
+              {:else}
+                <span class="avinit">{initial}</span>
+              {/if}
+            </button>
+            {#if acctOpen}
+              <div class="acctmenu">
+                <div class="acchead">@<b>{who}</b></div>
+                <button class="accitem" type="button" onclick={() => { acctOpen = false; go({ name: 'stats' }); }}>
+                  {t('stats_link')}
+                </button>
+                {#if edition === 'hosted'}
+                  <button class="accitem" type="button" onclick={() => { acctOpen = false; go({ name: 'invite' }); }}>
+                    {t('inv_head')}
+                  </button>
+                {/if}
+                <button class="accitem out" type="button" onclick={() => { acctOpen = false; onLogout(); }}>
+                  {t('logout')}
+                </button>
+              </div>
+            {/if}
+          </div>
         {:else if view.name !== 'auth'}
           <button class="link loginlink" type="button" onclick={() => go({ name: 'auth' })}>
             {t('login')}
@@ -559,9 +650,17 @@
             {onRead}
             onStats={() => go({ name: 'stats' })}
             onAuth={() => go({ name: 'auth' })}
+            onInvite={() => go({ name: 'invite' })}
           />
         {:else if view.name === 'reader' && user}
-          <Reader book={view.book} timeline={view.timeline} {user} {onExit} {onWpm} />
+          <Reader
+            book={view.book}
+            timeline={view.timeline}
+            {user}
+            {onExit}
+            {onWpm}
+            ephemeral={view.ephemeral ?? false}
+          />
         {:else if view.name === 'stats' && user}
           <Stats onBack={() => go({ name: 'library' })} onWrapped={() => go({ name: 'wrapped' })} />
         {:else if view.name === 'premium'}
@@ -573,6 +672,7 @@
           <SharedLanding
             token={view.token}
             onStart={onSharedStart}
+            onRead={onSharedRead}
             onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
           />
         {:else if view.name === 'invite'}

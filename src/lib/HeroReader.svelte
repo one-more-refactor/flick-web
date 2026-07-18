@@ -9,10 +9,13 @@
     words,
     wpm = 360,
     loopPauseMs = 1500,
+    meter = false,
   }: {
     words: TimelineWord[];
     wpm?: number;
     loopPauseMs?: number;
+    /** show the instrument telemetry row (word index + wpm) under the bar */
+    meter?: boolean;
   } = $props();
 
   let index = $state(0);
@@ -70,6 +73,7 @@
   const pivot = $derived(current[0].charAt(current[1]));
   const post = $derived(current[0].slice(current[1] + 1));
   const pct = $derived(words.length > 0 ? ((index + 1) / words.length) * 100 : 0);
+  const pad3 = (n: number) => String(n).padStart(3, '0');
 </script>
 
 <div class="hero-reader" aria-hidden="true">
@@ -77,4 +81,29 @@
   <div class="hword">{pre}<span class="pv">{pivot}</span>{post}</div>
   <div class="hrail"><i></i></div>
   <div class="hprogress"><i style="width: {pct}%"></i></div>
+  {#if meter}
+    <div class="hmeter">
+      <span>[ {pad3(index + 1)} / {pad3(words.length)} ]</span>
+      <span><b>{wpm}</b> wpm</span>
+    </div>
+  {/if}
 </div>
+
+<style>
+  /* instrument telemetry under the progress bar — quiet, tabular, tracked */
+  .hmeter {
+    display: flex;
+    justify-content: space-between;
+    max-width: 300px;
+    margin: 8px auto 0;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .hmeter b {
+    font-weight: 400;
+    color: var(--ink);
+  }
+</style>
