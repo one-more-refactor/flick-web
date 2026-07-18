@@ -12,12 +12,14 @@
     edition = 'selfhost',
     onRead,
     onStats,
+    onAuth,
   }: {
     user: User;
     who: string | null;
     edition?: 'selfhost' | 'hosted';
     onRead: (book: Book, timeline: Timeline) => void;
     onStats: () => void;
+    onAuth?: () => void;
   } = $props();
 
   /** Weekly allowance line, only when the server enforces one (hosted+free). */
@@ -70,7 +72,22 @@
       .filter((b) => b.position > 0 && b.position < b.word_count && b.last_read_at)
       .sort((a, b) => (b.last_read_at ?? 0) - (a.last_read_at ?? 0))[0] ?? null,
   );
-  const rest = $derived(books.filter((b) => b !== cont));
+  // Friction pass (contract v0.4.1): reading front and center — in-progress
+  // by recency, then unread (server order), finished last.
+  const rest = $derived.by(() => {
+    const others = books.filter((b) => b !== cont);
+    const rank = (b: Book) =>
+      b.word_count > 0 && b.position >= b.word_count ? 2 : b.last_read_at ? 0 : 1;
+    return others
+      .map((b, i) => ({ b, i }))
+      .sort(
+        (x, y) =>
+          rank(x.b) - rank(y.b) ||
+          (y.b.last_read_at ?? 0) - (x.b.last_read_at ?? 0) ||
+          x.i - y.i,
+      )
+      .map((x) => x.b);
+  });
 
   const wordsRead = $derived(books.reduce((n, b) => n + Math.min(b.position, b.word_count), 0));
   const num = (n: number) => n.toLocaleString();
@@ -242,6 +259,13 @@
       {t('words_read_k')}
     </div>
   </div>
+
+  {#if user.guest}
+    <div class="guestrow">
+      <span>{t('guest_hint')}</span>
+      <button class="linklike" type="button" onclick={onAuth}>{t('guest_keep')} <b>→</b></button>
+    </div>
+  {/if}
 
   {#if !loaded}
     <div class="status">{t('loading')}<span class="cur">_</span></div>

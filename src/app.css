@@ -424,6 +424,9 @@ footer.app .wrap {
 .auth { max-width: 400px; margin: 0 auto; padding: clamp(40px, 8vh, 90px) 0 60px; }
 .auth .head { font-size: 12px; color: var(--dim); letter-spacing: 0.05em; margin-bottom: 26px; }
 .auth .head b { color: var(--ink); font-weight: 400; }
+/* one-line account pitch; guests get the merge reassurance in accent */
+.auth .pitch { font-size: 12px; color: var(--dim); margin: -16px 0 26px; }
+.auth .pitch .keep { color: var(--accent); }
 .auth form { display: flex; flex-direction: column; gap: 16px; }
 .auth .providers { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 .auth .navline { display: flex; justify-content: space-between; align-items: baseline; margin-top: 22px; }
@@ -462,6 +465,21 @@ footer.app .wrap {
 .search:focus { outline: none; border-color: var(--accent); }
 
 .list { border: 1px solid var(--line); background: var(--panel); }
+/* guest persistence hint — quiet, never a modal (friction doctrine) */
+.guestrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0 10px;
+  padding: 9px 12px;
+  border: 1px dashed var(--line);
+  font-size: 11px;
+  color: var(--dim);
+}
+.guestrow .linklike b { color: var(--accent); }
+
 .rowbook { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-top: 1px solid var(--line); width: 100%; text-align: left; transition: border-color 160ms; }
 .rowbook:first-child { border-top: none; }
 .rowbook:hover .t { color: var(--accent); }

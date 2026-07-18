@@ -9,9 +9,12 @@
   let {
     onAuthed,
     onBack,
+    guest = false,
   }: {
     onAuthed: (user: User) => void;
     onBack: () => void;
+    /** Coming from a guest session — show the merge reassurance. */
+    guest?: boolean;
   } = $props();
 
   type Step = 'email' | 'password' | 'register' | 'code';
@@ -133,6 +136,10 @@
   <div class="wrap">
     {#if step === 'email'}
       <p class="head">FLICK<b>_</b></p>
+      <p class="pitch">
+        {t('auth_pitch')}
+        {#if guest}<span class="keep">{t('auth_guest_merge')}</span>{/if}
+      </p>
       <form onsubmit={submitEmail}>
         <div class="field">
           <label for="auth-email">{t('auth_email')}</label>
@@ -200,6 +207,7 @@
       </div>
     {:else if step === 'register'}
       <p class="head">{t('auth_new_here')} · <b>{email}</b></p>
+      {#if guest}<p class="pitch"><span class="keep">{t('auth_guest_merge')}</span></p>{/if}
       <form onsubmit={submitRegister}>
         <div class="field">
           <label for="reg-password">{t('auth_password')}</label>

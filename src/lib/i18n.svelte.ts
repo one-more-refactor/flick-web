@@ -19,6 +19,19 @@ const DICT: Dict = {
   save_account: { en: 'save your reading — create an account', de: 'Fortschritt sichern — Konto erstellen' },
   create_account: { en: 'Create account', de: 'Konto erstellen' },
   go_premium: { en: 'Go Premium', de: 'Premium holen' },
+  auth_pitch: {
+    en: 'one account — your library, position and streak on every device.',
+    de: 'ein Konto — Bibliothek, Position und Serie auf jedem Gerät.',
+  },
+  auth_guest_merge: {
+    en: 'your current reading comes with you.',
+    de: 'dein bisheriges Lesen kommt mit.',
+  },
+  guest_hint: {
+    en: 'guest session — your reading lives only in this browser',
+    de: 'Gast-Sitzung — dein Lesefortschritt lebt nur in diesem Browser',
+  },
+  guest_keep: { en: 'keep it', de: 'sichern' },
 
   // landing
   start_reading: { en: 'Start reading', de: 'Loslesen' },

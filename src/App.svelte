@@ -331,11 +331,22 @@
             error={quickErr}
           />
         {:else if view.name === 'auth'}
-          <Auth {onAuthed} onBack={() => go(user ? { name: 'library' } : { name: 'landing' })} />
+          <Auth
+            {onAuthed}
+            guest={user?.guest ?? false}
+            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+          />
         {:else if view.name === 'onboarding' && user}
           <Onboarding {user} onDone={onOnboarded} />
         {:else if view.name === 'library' && user}
-          <Library {user} {who} {edition} {onRead} onStats={() => go({ name: 'stats' })} />
+          <Library
+            {user}
+            {who}
+            {edition}
+            {onRead}
+            onStats={() => go({ name: 'stats' })}
+            onAuth={() => go({ name: 'auth' })}
+          />
         {:else if view.name === 'reader' && user}
           <Reader book={view.book} timeline={view.timeline} {user} {onExit} {onWpm} />
         {:else if view.name === 'stats' && user}
