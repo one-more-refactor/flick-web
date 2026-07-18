@@ -409,6 +409,28 @@
   let themesOpen = $state(false);
   // ---- account menu (v0.8): the square avatar button opens it
   let acctOpen = $state(false);
+  let acctConfirmDel = $state(false); // two-step account deletion (GDPR, v0.9)
+
+  /** GDPR erasure: delete the account server-side, then drop to the door. */
+  async function doDeleteAccount() {
+    try {
+      await api.deleteAccount();
+    } catch {
+      // even on error the session is likely gone — fall through to landing
+    }
+    acctConfirmDel = false;
+    acctOpen = false;
+    user = null;
+    chip = null;
+    themeState.detach();
+    i18n.detach();
+    go({ name: 'landing' }, 'replace');
+  }
+
+  // closing the account menu resets the delete confirmation
+  $effect(() => {
+    if (!acctOpen) acctConfirmDel = false;
+  });
 
   /** Remaining weekly uploads for the top-bar meter (hosted free plan only). */
   const uploadsLeft = $derived(
@@ -597,6 +619,21 @@
                 {#if edition === 'hosted'}
                   <button class="accitem" type="button" onclick={() => { acctOpen = false; go({ name: 'invite' }); }}>
                     {t('inv_head')}
+                  </button>
+                {/if}
+                <a class="accitem" href={api.EXPORT_URL} download onclick={() => (acctOpen = false)}>
+                  {t('export_data')}
+                </a>
+                {#if acctConfirmDel}
+                  <button class="accitem del" type="button" onclick={doDeleteAccount}>
+                    {t('delete_account_sure')}
+                  </button>
+                  <button class="accitem" type="button" onclick={() => (acctConfirmDel = false)}>
+                    {t('cancel')}
+                  </button>
+                {:else}
+                  <button class="accitem del" type="button" onclick={() => (acctConfirmDel = true)}>
+                    {t('delete_account')}
                   </button>
                 {/if}
                 <button class="accitem out" type="button" onclick={() => { acctOpen = false; onLogout(); }}>

@@ -1,65 +1,86 @@
-// Landing scroll choreography — GSAP ScrollTrigger reveals + Lenis smoothing.
-// This module is dynamically imported by Landing.svelte AFTER first paint and
-// ONLY when prefers-reduced-motion is off, so gsap/lenis live in a lazy chunk
-// and never touch the critical path. Without it the landing is fully static
-// and fully usable — motion is decoration here, never load-bearing.
+// Landing scroll reveals — IntersectionObserver + the Web Animations API, no
+// third-party animation library. GSAP is deliberately NOT used here: its
+// license (GreenSock "no-charge") is not GPL-compatible and this file ships
+// inside the AGPL app's web/dist. The fancy marketing motion (GSAP/Lenis/Vanta)
+// lives in the separate, non-AGPL flick-landing site instead.
+//
+// Dynamically imported by Landing.svelte AFTER first paint and ONLY when
+// prefers-reduced-motion is off, so it stays off the critical path. Without it
+// the landing is fully static and fully usable — motion is decoration here,
+// never load-bearing (if this never runs, content simply stays visible).
 //
 // Motion law (docs/DESIGN-BRIEF-v0.3.md): nothing over 600ms per beat, easing
-// only linear/ease-in-out, enters = fade + 4–8px translate (never scale),
-// short staggers on grouped items. `once: true` everywhere — a band reveals
-// one time and then sits still, like an instrument that has settled.
+// linear/ease-in-out only, enters = fade + 4–8px translate (never scale),
+// short staggers on grouped items, each band reveals once and then sits still.
 
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
+const EASE = 'cubic-bezier(0.2, 0.6, 0.2, 1)';
 
-gsap.registerPlugin(ScrollTrigger);
-
-/** Wire the landing's scroll choreography. Returns a full-teardown cleanup —
+/** Wire the landing's scroll reveals. Returns a full-teardown cleanup —
  *  Landing unmounts on login/start, and nothing may leak into the app. */
 export function mountLandingMotion(root: HTMLElement): () => void {
-  // Premium-feel smooth scroll. Restrained lerp; Lenis leaves touch alone by
-  // default (instrument-direct on phones). Runs on the GSAP ticker so both
-  // systems share one rAF.
-  const lenis = new Lenis({ lerp: 0.14 });
-  lenis.on('scroll', ScrollTrigger.update);
-  const tick = (time: number) => lenis.raf(time * 1000);
-  gsap.ticker.add(tick);
-  gsap.ticker.lagSmoothing(0);
+  const io = new IntersectionObserver(
+    (entries, obs) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        reveal(e.target as HTMLElement);
+        obs.unobserve(e.target);
+      }
+    },
+    { rootMargin: '0px 0px -18% 0px', threshold: 0.12 },
+  );
 
-  const ctx = gsap.context(() => {
-    for (const band of Array.from(root.querySelectorAll<HTMLElement>('[data-lp-band]'))) {
-      const items = band.querySelectorAll<HTMLElement>('[data-lp-reveal]');
-      const rows = band.querySelectorAll<HTMLElement>('[data-lp-row]');
-      const bar = band.querySelector<HTMLElement>('[data-lp-bar]');
-
-      // Set start states explicitly (not via CSS) so a failed chunk load can
-      // never leave content hidden, and there is no from()-tween pop.
-      if (items.length) gsap.set(items, { autoAlpha: 0, y: 8 });
-      if (rows.length) gsap.set(rows, { autoAlpha: 0 });
-      if (bar) gsap.set(bar, { scaleX: 0, transformOrigin: 'left center' });
-
-      // A band already inside the first viewport plays as part of the load
-      // beat (short delay after the hero); everything below waits for scroll.
-      const inView = band.getBoundingClientRect().top < window.innerHeight * 0.8;
-      const tl = gsap.timeline(
-        inView
-          ? { delay: 0.3 }
-          : { scrollTrigger: { trigger: band, start: 'top 80%', once: true } },
-      );
-      if (items.length)
-        tl.to(items, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power1.inOut', stagger: 0.06 });
-      // the ORP column prints row by row, like a receipt
-      if (rows.length)
-        tl.to(rows, { autoAlpha: 1, duration: 0.18, ease: 'none', stagger: 0.07 }, '-=0.12');
-      // the pace bar sweeps once — 500ms linear, per the streak choreography
-      if (bar) tl.to(bar, { scaleX: 1, duration: 0.5, ease: 'none' }, '-=0.05');
+  // Set start states in JS (not CSS) so a band is hidden only once this module
+  // is actually running; a never-loaded / reduced-motion chunk leaves content
+  // visible. A band already on screen still animates when observed on mount.
+  for (const band of Array.from(root.querySelectorAll<HTMLElement>('[data-lp-band]'))) {
+    for (const el of Array.from(
+      band.querySelectorAll<HTMLElement>('[data-lp-reveal],[data-lp-row]'),
+    )) {
+      el.style.opacity = '0';
     }
-  }, root);
+    const bar = band.querySelector<HTMLElement>('[data-lp-bar]');
+    if (bar) {
+      bar.style.transformOrigin = 'left center';
+      bar.style.transform = 'scaleX(0)';
+    }
+    io.observe(band);
+  }
 
-  return () => {
-    ctx.revert();
-    gsap.ticker.remove(tick);
-    lenis.destroy();
-  };
+  function reveal(band: HTMLElement): void {
+    const items = Array.from(band.querySelectorAll<HTMLElement>('[data-lp-reveal]'));
+    items.forEach((el, i) => {
+      el.style.opacity = '';
+      el.animate(
+        [
+          { opacity: 0, transform: 'translateY(8px)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        { duration: 380, delay: i * 60, easing: EASE, fill: 'backwards' },
+      );
+    });
+    // the ORP column prints row by row, like a receipt
+    const rows = Array.from(band.querySelectorAll<HTMLElement>('[data-lp-row]'));
+    rows.forEach((el, i) => {
+      el.style.opacity = '';
+      el.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 180,
+        delay: 200 + i * 70,
+        easing: 'linear',
+        fill: 'backwards',
+      });
+    });
+    // the pace bar sweeps once — 500ms linear
+    const bar = band.querySelector<HTMLElement>('[data-lp-bar]');
+    if (bar) {
+      bar.style.transform = '';
+      bar.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], {
+        duration: 500,
+        delay: 250,
+        easing: 'linear',
+        fill: 'backwards',
+      });
+    }
+  }
+
+  return () => io.disconnect();
 }

@@ -349,6 +349,10 @@ const DICT: Dict = {
 
   // v0.8: account menu
   account_k: { en: 'account', de: 'Konto' },
+  // v0.9: data rights (GDPR)
+  export_data: { en: 'export my data', de: 'meine Daten exportieren' },
+  delete_account: { en: 'delete account', de: 'Konto löschen' },
+  delete_account_sure: { en: 'yes — delete everything', de: 'ja — alles löschen' },
 
   // v0.8: invite steps (readability)
   inv_step1: { en: 'share your invite link', de: 'teile deinen Einladungslink' },

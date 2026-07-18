@@ -233,6 +233,12 @@ export const me = (): Promise<User> => request<User>('/auth/me');
 export const updateMe = (patch: UserPatch): Promise<User> =>
   request<User>('/auth/me', json(patch, 'PATCH'));
 
+/** GDPR erasure — permanently delete the account and everything it owns. */
+export const deleteAccount = (): Promise<void> => request<void>('/auth/me', { method: 'DELETE' });
+
+/** GDPR export — a direct-download URL for the caller's full data (JSON). */
+export const EXPORT_URL = '/api/auth/export';
+
 export const providers = (): Promise<Provider[]> =>
   request<{ providers: Provider[] }>('/auth/providers').then((r) => r.providers);
 

@@ -528,6 +528,8 @@ footer.app .wrap {
   padding-left: 18px;
 }
 .accitem.out { color: var(--accent); }
+.accitem.del { color: var(--accent); }
+.accitem.del:hover { color: var(--bg); background: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   .accitem, .uptop .upmeter i { transition: none; }
 }
