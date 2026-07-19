@@ -332,7 +332,9 @@
 
 <div class="wrap lib">
   <div class="head">
-    <div class="who">@<b>{who}</b></div>
+    <!-- guests get no handle — a bare "@guest" reads like debug output; the
+         guest banner right below already tells the story -->
+    <div class="who">{#if !user.guest}@<b>{who}</b>{/if}</div>
     <div class="statsrow compact">
       <button class="stat statlink" type="button" onclick={onStats}>
         <DotNumber value={stats?.streak.current ?? 0} grid={3.2} />

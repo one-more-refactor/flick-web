@@ -535,7 +535,7 @@
               {t('ev_invite')}
             </button>
           {:else}
-            <button class="prem3d" type="button" onclick={goPremium}>
+            <button class="prembtn" type="button" onclick={goPremium}>
               <span class="pstar" aria-hidden="true">◆</span>{t('go_premium')}
             </button>
           {/if}
@@ -563,8 +563,8 @@
             </span>
           </button>
         {/if}
-        <a class="gh3d" href={REPO} target="_blank" rel="noopener" aria-label="GitHub">
-          <span class="ghstar3" aria-hidden="true">★</span>GITHUB<span class="ghx" aria-hidden="true">↗</span>
+        <a class="ghbtn" href={REPO} target="_blank" rel="noopener" aria-label="GitHub">
+          <span class="ghstar" aria-hidden="true">★</span>GITHUB<span class="ghx" aria-hidden="true">↗</span>
         </a>
         <div class="thpick">
           <button
@@ -613,6 +613,9 @@
           </span>
         </button>
         {#if user?.guest}
+          <button class="link loginlink" type="button" onclick={() => go({ name: 'auth' })}>
+            {t('login')}
+          </button>
           <button class="acct" type="button" onclick={() => go({ name: 'auth' })}>
             {t('create_account')}
           </button>
@@ -769,12 +772,6 @@
             {/each}
           </div>
         </div>
-        {#if edition === 'hosted'}
-          <nav class="foot-legal" aria-label="Legal">
-            <a href="https://myflick.app/impressum/">Impressum</a>
-            <a href="https://myflick.app/datenschutz/">Datenschutz</a>
-          </nav>
-        {/if}
         <span class="foot-mark">FLICK_</span>
       </div>
     </footer>
