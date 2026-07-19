@@ -535,8 +535,11 @@
               {t('ev_invite')}
             </button>
           {:else}
-            <button class="prembtn" type="button" onclick={goPremium}>
-              <span class="pstar" aria-hidden="true">◆</span>{t('go_premium')}
+            <button class="prembtn flip3" type="button" onclick={goPremium}>
+              <span class="flipbox">
+                <span class="fface fa"><span class="pstar" aria-hidden="true">◆</span>{t('go_premium')}</span>
+                <span class="fface fb" aria-hidden="true">{t('premium_flip')} →</span>
+              </span>
             </button>
           {/if}
         {/if}
@@ -563,8 +566,11 @@
             </span>
           </button>
         {/if}
-        <a class="ghbtn" href={REPO} target="_blank" rel="noopener" aria-label="GitHub">
-          <span class="ghstar" aria-hidden="true">★</span>GITHUB<span class="ghx" aria-hidden="true">↗</span>
+        <a class="ghbtn flip3" href={REPO} target="_blank" rel="noopener" aria-label="GitHub">
+          <span class="flipbox">
+            <span class="fface fa"><span class="ghstar" aria-hidden="true">★</span>GITHUB<span class="ghx" aria-hidden="true">↗</span></span>
+            <span class="fface fb" aria-hidden="true">OPEN SOURCE</span>
+          </span>
         </a>
         <div class="thpick">
           <button

@@ -473,56 +473,86 @@ footer.app .wrap {
 /* GitHub button — a real 3D block (v0.11): the accent extrude is a solid
    offset element (::before), never a blurred shadow — design-law safe. It
    lifts on hover and presses flat on click. */
-/* GITHUB — a quiet hairline chip in the same family as the theme picker and
-   the mode cube; the star warms to the accent on hover. (The 3D extrude pair
-   of v0.12 is gone by decree — it read as misaligned at chip size.) */
-.ghbtn {
+/* GITHUB + GO PREMIUM — true 3D flip chips (v0.13.1). They join the mode
+   cube and the streak chip in the top bar's one 3D vocabulary: the quarter
+   flip. Hovering rolls the whole chip 90° around X to a hidden second face
+   (GITHUB → OPEN SOURCE, GO PREMIUM → its tease); pressing sinks the solid
+   into the page. Same construction as .cubebox — a preserve-3d box whose
+   faces sit translateZ(half-height) out from the axis. Flat faces only, no
+   extrudes or shadows: the depth is real, not painted. */
+.flip3 {
+  perspective: 420px;
+  display: inline-block;
+  padding: 0;
+  border: none;
+  background: none;
+  text-decoration: none;
+}
+.flipbox {
+  position: relative;
+  display: grid; /* both faces stack in 1/1 so the box sizes to the widest */
+  transform-style: preserve-3d;
+  transform: rotateX(0deg);
+  transition: transform 340ms var(--ease);
+}
+.flip3:hover .flipbox,
+.flip3:focus-visible .flipbox { transform: rotateX(-90deg); }
+.flip3:active .flipbox { transform: rotateX(-90deg) translateZ(-9px); }
+.flip3:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.fface {
+  grid-area: 1 / 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   height: 26px;
-  padding: 0 11px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--dim);
+  padding: 0 12px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  text-decoration: none;
-  transition: color 160ms, border-color 160ms;
+  white-space: nowrap;
+  backface-visibility: hidden;
 }
-.ghbtn:hover, .ghbtn:focus-visible { color: var(--ink); border-color: var(--ink); }
-.ghbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.ghbtn .ghstar { color: var(--dim); font-size: 10px; line-height: 1; transition: color 160ms; }
-.ghbtn:hover .ghstar { color: var(--accent); }
+.fface.fa { transform: rotateX(0deg) translateZ(13px); }
+.fface.fb { transform: rotateX(90deg) translateZ(13px); }
+
+/* GITHUB: quiet hairline chip that rolls to an inverted OPEN SOURCE face */
+.ghbtn .fa {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--dim);
+}
+.ghbtn .ghstar { color: var(--accent); font-size: 10px; line-height: 1; }
 .ghbtn .ghx { font-size: 10px; }
+.ghbtn .fb {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
 @media (max-width: 470px) {
   .ghbtn { display: none; }
 }
 
-/* GO PREMIUM — the money button, same construction as .acct but pre-filled:
-   a solid flat accent block that inverts to a hairline outline on hover.
-   Flat by decree; no extrudes, no shadows. */
-.prembtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 26px;
-  padding: 0 12px;
+/* GO PREMIUM: the money button — solid accent face, tease on the flip side */
+.prembtn .fa {
   border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--bg);
-  font-size: 11px;
-  font-weight: 700;
   letter-spacing: 0.11em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transition: background 180ms var(--ease), color 180ms var(--ease);
 }
-.prembtn:hover, .prembtn:focus-visible { background: transparent; color: var(--accent); }
-.prembtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .prembtn .pstar { font-size: 9px; line-height: 1; }
+.prembtn .fb {
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  color: var(--accent);
+  letter-spacing: 0.11em;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* no roll — the second face simply never shows */
+  .flipbox { transition: none; }
+  .flip3:hover .flipbox, .flip3:focus-visible .flipbox, .flip3:active .flipbox { transform: none; }
+}
 
 /* account: square avatar button + dropdown menu (v0.8) */
 .acctwrap { position: relative; }

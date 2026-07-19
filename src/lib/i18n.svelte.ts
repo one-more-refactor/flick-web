@@ -20,6 +20,7 @@ const DICT: Dict = {
   save_account: { en: 'save your reading — create an account', de: 'Fortschritt sichern — Konto erstellen' },
   create_account: { en: 'Create account', de: 'Konto erstellen' },
   go_premium: { en: 'Go Premium', de: 'Premium holen' },
+  premium_flip: { en: 'unlimited', de: 'unbegrenzt' },
   auth_pitch: {
     en: 'one account — your library, position and streak on every device.',
     de: 'ein Konto — Bibliothek, Position und Serie auf jedem Gerät.',

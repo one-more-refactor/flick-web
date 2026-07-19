@@ -11,6 +11,7 @@ export const ES: Record<string, string> = {
   save_account: 'guarda tu progreso — crea una cuenta',
   create_account: 'Crear cuenta',
   go_premium: 'Hazte Premium',
+  premium_flip: 'sin límites',
   auth_pitch: 'una cuenta — tu biblioteca, posición y racha en todos tus dispositivos.',
   auth_guest_merge: 'tu lectura actual viene contigo.',
   guest_hint: 'sesión de invitado — tu lectura vive solo en este navegador',
