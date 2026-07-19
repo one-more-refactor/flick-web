@@ -7,6 +7,12 @@ updates:
     groups:
       js-minor:
         update-types: ["minor", "patch"]
+    ignore:
+      # The Svelte toolchain (svelte-check / language-tools) does not support
+      # the TypeScript 7 native compiler yet; pin to 5.x until it does. Without
+      # this, dependabot keeps opening a TS 7 PR whose CI fails on every run.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
