@@ -17,6 +17,7 @@
     onStats,
     onAuth,
     onInvite,
+    onPremium,
   }: {
     user: User;
     who: string | null;
@@ -25,7 +26,11 @@
     onStats: () => void;
     onAuth?: () => void;
     onInvite?: () => void;
+    onPremium?: () => void;
   } = $props();
+
+  /** Hosted-free accounts see the bulk-import Pro gate (contract v0.11). */
+  const gated = $derived(edition === 'hosted' && !user.pro_active);
 
   /** Weekly allowance line, only when the server enforces one (hosted+free). */
   const allowance = $derived(
@@ -567,6 +572,8 @@
 
 {#if wizardOpen}
   <Wizard
+    {gated}
+    onPremium={onPremium}
     onRead={(book, tl) => {
       wizardOpen = false;
       onRead(book, tl);

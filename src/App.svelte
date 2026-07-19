@@ -18,6 +18,7 @@
   import Reader from './lib/Reader.svelte';
   import Stats from './lib/Stats.svelte';
   import Streak from './lib/Streak.svelte';
+  import Drop from './lib/Drop.svelte';
 
   type View =
     | { name: 'boot' }
@@ -391,6 +392,19 @@
   );
   const inReader = $derived(view.name === 'reader');
 
+  // ---- drop-anywhere (v0.11): a file dropped on the window adds a book.
+  // Active in signed-in content views only — not the reader, onboarding or
+  // auth. A bump to libTick re-keys the current view so a bulk import that
+  // stays put (Pro/selfhost) reloads the library it just added to.
+  let libTick = $state(0);
+  const dropActive = $derived(
+    !!user &&
+      view.name !== 'reader' &&
+      view.name !== 'onboarding' &&
+      view.name !== 'auth' &&
+      view.name !== 'boot',
+  );
+
   // ---- per-route document titles (v0.5.1 brand polish) ----
   $effect(() => {
     document.title =
@@ -571,8 +585,8 @@
             </span>
           </button>
         {/if}
-        <a class="link brk ghbtn" href={REPO} target="_blank" rel="noopener">
-          <span class="ghstar" aria-hidden="true">★</span>GITHUB<span class="x">↗</span>
+        <a class="gh3d" href={REPO} target="_blank" rel="noopener" aria-label="GitHub">
+          <span class="ghstar3" aria-hidden="true">★</span>GITHUB<span class="ghx" aria-hidden="true">↗</span>
         </a>
         <div class="thpick">
           <button
@@ -690,7 +704,7 @@
   </header>
 
   <main class:grid={!inReader}>
-    {#key view.name}
+    {#key view.name + ':' + libTick}
       <div class="viewbox">
         {#if view.name === 'boot'}
           <div class="wrap" style="padding-top: 40px">
@@ -723,6 +737,7 @@
             onStats={() => go({ name: 'stats' })}
             onAuth={() => go({ name: 'auth' })}
             onInvite={() => go({ name: 'invite' })}
+            onPremium={goPremium}
           />
         {:else if view.name === 'reader' && user}
           <Reader
@@ -783,6 +798,17 @@
 </div>
 
 <svelte:window onclick={onWindowClick} onkeydown={onWindowKey} />
+
+{#if user}
+  <Drop
+    {user}
+    {edition}
+    active={dropActive}
+    {onRead}
+    onImported={() => (libTick += 1)}
+    onGoPremium={goPremium}
+  />
+{/if}
 
 {#if streakShow !== null}
   <Streak days={streakShow} onDone={() => (streakShow = null)} />

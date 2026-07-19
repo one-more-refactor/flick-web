@@ -19,7 +19,8 @@
   const ROWS = $derived([
     { label: t('f_reader'), free: '✓', pro: '✓' },
     { label: t('f_clients'), free: '✓', pro: '✓' },
-    { label: `${t('f_imports')} · ${t('f_bulk')}`, free: '✓', pro: '✓' },
+    { label: t('f_imports'), free: '✓', pro: '✓' },
+    { label: t('f_bulk'), free: '—', pro: '✓' },
     { label: t('f_share'), free: '✓', pro: '✓' },
     { label: t('f_storage'), free: '✓', pro: '✓' },
     { label: `${t('f_uploads_free')} / ${t('f_uploads_pro')}`, free: '15', pro: '∞' },

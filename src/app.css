@@ -463,22 +463,52 @@ footer.app .wrap {
   .thcar { transition: none; }
 }
 
-/* GitHub button — more satisfying dart + star (v0.8) */
-.ghbtn { display: inline-flex; align-items: center; }
-.ghstar {
-  display: inline-block;
-  width: 0;
-  overflow: hidden;
-  opacity: 0;
-  color: var(--accent);
-  transform: scale(0.4);
-  transition: width 180ms var(--ease), opacity 180ms, transform 220ms var(--ease);
+/* GitHub button — a real 3D block (v0.11): the accent extrude is a solid
+   offset element (::before), never a blurred shadow — design-law safe. It
+   lifts on hover and presses flat on click. */
+.gh3d {
+  /* position:relative WITHOUT z-index — the ::before extrude uses z-index:-1
+     to sit behind the face; giving .gh3d its own stacking context would paint
+     the pseudo above the background instead. */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  margin-right: 3px; /* room for the 3px extrude */
+  padding: 0 11px;
+  border: 1px solid var(--ink);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform 140ms var(--ease);
 }
-.ghbtn:hover .ghstar { width: 11px; opacity: 1; transform: scale(1); margin-right: 3px; }
-.ghbtn .x { display: inline-block; transition: transform 200ms var(--ease), color 160ms; }
-.ghbtn:hover .x { transform: translate(2px, -2px); }
+.gh3d::before {
+  content: '';
+  position: absolute;
+  inset: -1px; /* cover the host border so the extrude reads as one block */
+  z-index: -1;
+  background: var(--accent);
+  transform: translate(3px, 3px);
+  transition: transform 140ms var(--ease);
+}
+.gh3d:hover { transform: translate(-1px, -1px); }
+.gh3d:hover::before { transform: translate(4px, 4px); }
+.gh3d:active { transform: translate(3px, 3px); }
+.gh3d:active::before { transform: translate(0, 0); }
+.gh3d:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.gh3d .ghstar3 { color: var(--accent); font-size: 10px; line-height: 1; }
+.gh3d .ghx { color: var(--dim); font-size: 10px; transition: color 140ms; }
+.gh3d:hover .ghx { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
-  .ghstar, .ghbtn .x { transition: none; }
+  .gh3d, .gh3d::before { transition: none; }
+}
+@media (max-width: 470px) {
+  .gh3d { display: none; }
 }
 
 /* top-bar remaining-uploads meter (hosted free, v0.8) */
@@ -2090,4 +2120,122 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   font-weight: 700;
   color: var(--bg);
   background: var(--accent);
+}
+
+/* ---------- drop-anywhere: overlay · Pro gate · toast (v0.11) ---------- */
+
+/* full-screen "drop to add" overlay while a file is dragged over the window */
+.dropover {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  animation: viewfade 140ms var(--ease);
+  pointer-events: none;
+}
+.dropcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(440px, 92vw);
+  padding: 44px 28px;
+  border: 2px dashed var(--accent);
+  background: var(--panel);
+  text-align: center;
+}
+.dropcard .dropmark { font-size: 30px; color: var(--accent); line-height: 1; }
+.dropcard .droptitle {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.dropcard .droptitle .cur { color: var(--accent); animation: blink 1.15s steps(1) infinite; }
+.dropcard .drophint { font-size: 11px; color: var(--dim); letter-spacing: 0.04em; }
+
+/* bulk-import Pro gate — a centered modal (hosted free, ≥2 files) */
+.gatewrap {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  animation: viewfade 160ms var(--ease);
+}
+.gatecard {
+  position: relative;
+  width: min(400px, 92vw);
+  padding: 30px 28px 26px;
+  border: 1px solid var(--ink);
+  background: var(--panel);
+  animation: panelin 200ms var(--ease);
+}
+.gatecard .gatex {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 16px;
+  color: var(--dim);
+  transition: color 140ms;
+}
+.gatecard .gatex:hover { color: var(--ink); }
+.gatecard .gatek { font-size: 10px; letter-spacing: 0.22em; color: var(--accent); }
+.gatecard .gateh { font-size: 17px; font-weight: 700; letter-spacing: 0.01em; margin: 12px 0 0; }
+.gatecard .gatecount { font-size: 12px; color: var(--dim); margin: 14px 0 0; letter-spacing: 0.04em; }
+.gatecard .gatecount b { color: var(--accent); font-weight: 700; }
+.gatecard .gatebody { font-size: 12px; color: var(--dim); margin: 6px 0 0; line-height: 1.55; max-width: 46ch; }
+.gatecard .gateacts {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 22px;
+}
+.gatecard .gateacts .btn { flex: none; }
+
+/* terminal toast: importing progress · added · error (never a spinner) */
+.droptoast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 65;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 92vw;
+  padding: 10px 15px;
+  border: 1px solid var(--ink);
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--ink);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: toastin 220ms var(--ease);
+}
+.droptoast.err { border-color: var(--accent); color: var(--accent); }
+.droptoast .cur { color: var(--accent); animation: blink 1.15s steps(1) infinite; }
+.droptoast .tspin {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: var(--accent);
+  animation: tspin 900ms steps(4) infinite;
+}
+.droptoast .tdismiss { color: var(--accent); font-size: 14px; margin-left: 2px; }
+@keyframes toastin { from { opacity: 0; transform: translate(-50%, 8px); } }
+@keyframes tspin { 50% { opacity: 0.25; transform: scale(0.7); } }
+@media (prefers-reduced-motion: reduce) {
+  .dropover, .gatewrap, .gatecard, .droptoast { animation: none; }
+  .droptoast .tspin { animation: none; }
 }

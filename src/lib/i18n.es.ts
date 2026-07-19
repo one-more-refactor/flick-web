@@ -248,4 +248,17 @@ export const ES: Record<string, string> = {
   lp_spec_formats_k: 'formatos',
   lp_spec_formats_v: 'pdf · epub · txt · md · url · pegar',
   lp_spec_source_k: 'código',
+
+  // drop-anywhere + bulk gate (v0.11)
+  drop_to_add: 'suelta para añadir',
+  drop_hint_one: 'un archivo → directo al lector',
+  drop_hint_more_free: 'varios a la vez es un extra Pro',
+  drop_hint_more_pro: 'suelta todos los que quieras',
+  drop_importing: 'importando',
+  books_added: 'libros añadidos',
+  go_pro_arrow: 'Hazte Pro',
+  gate_bulk_title: 'La importación masiva es Pro',
+  gate_files_dropped: 'archivos soltados',
+  gate_bulk_body: 'gratis añade de uno en uno — Pro toma todo el montón de una vez.',
+  gate_add_first: 'añadir el primero',
 };

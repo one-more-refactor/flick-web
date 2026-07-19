@@ -399,6 +399,29 @@ const DICT: Dict = {
   lp_spec_formats_v: { en: 'pdf · epub · txt · md · url · paste', de: 'pdf · epub · txt · md · url · einfügen' },
   lp_spec_source_k: { en: 'source', de: 'Quellcode' },
 
+  // drop-anywhere overlay + indicators (v0.11)
+  drop_to_add: { en: 'drop to add', de: 'ablegen zum Hinzufügen' },
+  drop_hint_one: {
+    en: 'one file → straight into the reader',
+    de: 'eine Datei → direkt in den Reader',
+  },
+  drop_hint_more_free: {
+    en: 'several at once is a Pro perk',
+    de: 'mehrere auf einmal ist ein Pro-Extra',
+  },
+  drop_hint_more_pro: { en: 'drop as many as you like', de: 'leg so viele ab, wie du willst' },
+  drop_importing: { en: 'importing', de: 'importiere' },
+  books_added: { en: 'books added', de: 'Bücher hinzugefügt' },
+  go_pro_arrow: { en: 'Go Pro', de: 'Pro holen' },
+  // bulk-import Pro gate (v0.11)
+  gate_bulk_title: { en: 'Bulk import is Pro', de: 'Massenimport ist Pro' },
+  gate_files_dropped: { en: 'files dropped', de: 'Dateien abgelegt' },
+  gate_bulk_body: {
+    en: 'free adds one at a time — Pro drops the whole pile at once.',
+    de: 'gratis fügt einzeln hinzu — Pro nimmt den ganzen Stapel auf einmal.',
+  },
+  gate_add_first: { en: 'add the first one', de: 'die erste hinzufügen' },
+
   // errors
   err_generic: { en: 'request failed', de: 'Anfrage fehlgeschlagen' },
 };

@@ -8,9 +8,14 @@
   let {
     onRead,
     onClose,
+    gated = false,
+    onPremium,
   }: {
     onRead: (book: Book, timeline: Timeline) => void;
     onClose: () => void;
+    /** Hosted-free: multi-file bulk import is a Pro perk (contract v0.11). */
+    gated?: boolean;
+    onPremium?: () => void;
   } = $props();
 
   type Source = 'paste' | 'file' | 'url' | 'cloud' | 'catalog';
@@ -107,12 +112,19 @@
   const BULK_MAX = 50;
   let bulkDone = $state(0);
   let bulkTotal = $state(0);
+  // Hosted-free: dropping several files at once raises the Pro gate instead of
+  // importing them (contract v0.11). Holds the batch so "add the first" works.
+  let gateBatch = $state<File[] | null>(null);
 
   async function goFiles(files: File[]) {
     const batch = files.slice(0, BULK_MAX);
     if (batch.length === 0) return;
     if (batch.length === 1) {
       void goFile(batch[0]);
+      return;
+    }
+    if (gated) {
+      gateBatch = batch;
       return;
     }
     if (busy) return;
@@ -133,6 +145,18 @@
     }
     busy = null;
     if (failed === 0) onClose();
+  }
+
+  function gateAddFirst() {
+    const first = gateBatch?.[0];
+    gateBatch = null;
+    if (first) void goFile(first);
+  }
+
+  function gateGoPro() {
+    gateBatch = null;
+    onClose();
+    onPremium?.();
   }
 
   const goUrl = () => run(link, () => api.importUrl(link.trim(), title.trim() || undefined));
@@ -295,3 +319,21 @@
     <button class="linklike" type="button" onclick={back}>← {t('auth_back')}</button>
   </div>
 </div>
+
+{#if gateBatch}
+  <div class="gatewrap" role="dialog" aria-modal="true" aria-label={t('gate_bulk_title')}>
+    <div class="gatecard">
+      <button class="gatex" type="button" aria-label={t('close')} onclick={() => (gateBatch = null)}
+        >×</button
+      >
+      <span class="gatek">PRO_</span>
+      <h2 class="gateh">{t('gate_bulk_title')}</h2>
+      <p class="gatecount"><b>{gateBatch.length}</b> {t('gate_files_dropped')}</p>
+      <p class="gatebody">{t('gate_bulk_body')}</p>
+      <div class="gateacts">
+        <button class="btn" type="button" onclick={gateGoPro}>{t('go_pro_arrow')} →</button>
+        <button class="linklike" type="button" onclick={gateAddFirst}>{t('gate_add_first')}</button>
+      </div>
+    </div>
+  </div>
+{/if}
