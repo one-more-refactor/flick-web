@@ -769,6 +769,12 @@
             {/each}
           </div>
         </div>
+        {#if edition === 'hosted'}
+          <nav class="foot-legal" aria-label="Legal">
+            <a href="https://myflick.app/impressum">Impressum</a>
+            <a href="https://myflick.app/datenschutz">Datenschutz</a>
+          </nav>
+        {/if}
         <span class="foot-mark">FLICK_</span>
       </div>
     </footer>

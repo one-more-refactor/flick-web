@@ -645,6 +645,15 @@ footer.app .wrap {
 .lang-opt.on { color: var(--ink); border-color: var(--ink); }
 .lang-opt:hover { color: var(--ink); }
 .foot-mark { font-size: 11px; color: var(--dim); letter-spacing: 0.1em; }
+.foot-legal { display: flex; gap: 16px; }
+.foot-legal a {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  transition: color 160ms;
+}
+.foot-legal a:hover { color: var(--ink); }
 
 /* ---------- shared: panels, buttons, forms ---------- */
 .panel { border: 1px solid var(--line); background: var(--panel); }
