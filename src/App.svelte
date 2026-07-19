@@ -35,15 +35,33 @@
   let view = $state<View>({ name: 'boot' });
   let user = $state<User | null>(null);
   let edition = $state<'selfhost' | 'hosted'>('selfhost');
+  let announcement = $state<{ text: string; link: string; label: string } | null>(null);
+  let adminUrl = $state<string | null>(null);
+  let bannerGone = $state(false);
   let starting = $state(false);
   let streakShow = $state<number | null>(null);
 
   api
     .meta()
-    .then((m) => (edition = m.edition))
+    .then((m) => {
+      edition = m.edition;
+      adminUrl = m.admin_url ?? null;
+      const a = m.announcement ?? null;
+      // Dismissal is remembered per content, so a NEW announcement reappears.
+      if (a && localStorage.getItem('flick.banner') !== a.text + '|' + a.link) {
+        announcement = a;
+      }
+    })
     .catch(() => {
       // pre-v0.4 server — selfhost default keeps Pro surfaces hidden
     });
+
+  function dismissBanner() {
+    if (announcement) {
+      localStorage.setItem('flick.banner', announcement.text + '|' + announcement.link);
+    }
+    bannerGone = true;
+  }
 
   // Any 401 from a non-auth endpoint means the session is gone — back to the door.
   api.setUnauthorizedHandler(() => {
@@ -462,6 +480,18 @@
 </script>
 
 <div class="page">
+  {#if announcement && !bannerGone}
+    <div class="sitebanner" role="status">
+      <span class="sb-tick" aria-hidden="true"></span>
+      <span class="sb-text">{announcement.text}</span>
+      {#if announcement.link}
+        <a class="sb-link" href={announcement.link} target="_blank" rel="noopener">
+          {announcement.label || announcement.link}<span class="x">↗</span>
+        </a>
+      {/if}
+      <button class="sb-close" type="button" onclick={dismissBanner} aria-label={t('cancel')}>✕</button>
+    </div>
+  {/if}
   <header class="top">
     <div class="wrap">
       <div class="navl">
@@ -624,6 +654,11 @@
                 <a class="accitem" href={api.EXPORT_URL} download onclick={() => (acctOpen = false)}>
                   {t('export_data')}
                 </a>
+                {#if user.is_admin && adminUrl}
+                  <a class="accitem" href={adminUrl} target="_blank" rel="noopener" onclick={() => (acctOpen = false)}>
+                    ADMIN<span class="x">↗</span>
+                  </a>
+                {/if}
                 {#if acctConfirmDel}
                   <button class="accitem del" type="button" onclick={doDeleteAccount}>
                     {t('delete_account_sure')}

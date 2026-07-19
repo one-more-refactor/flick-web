@@ -126,6 +126,42 @@ a { color: inherit; }
 @keyframes fu { to { opacity: 1; transform: none; } }
 
 /* ---------- header ---------- */
+/* ---------- site banner (server announcement, v0.10) ---------- */
+.sitebanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+}
+.sb-tick {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  flex: none;
+}
+.sb-text { color: var(--ink); }
+.sb-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent);
+  flex: none;
+}
+.sb-link:hover { opacity: 0.8; }
+.sb-close {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: var(--dim);
+  font: inherit;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.sb-close:hover { color: var(--ink); }
+
 header.top { position: relative; z-index: 2; }
 header.top .wrap {
   display: flex;

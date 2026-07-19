@@ -39,11 +39,17 @@ export interface User {
   settings: Settings;
   /** Present from server v0.4 on. */
   uploads?: UploadStatus;
+  /** Operator account (v0.10) — unlocks the ADMIN menu link. */
+  is_admin?: boolean;
 }
 
 export interface Meta {
   edition: 'selfhost' | 'hosted';
   version: string;
+  /** Server-set site banner (v0.10), null unless published. */
+  announcement?: { text: string; link: string; label: string } | null;
+  /** Admin panel URL for the account-menu ADMIN link (v0.10). */
+  admin_url?: string | null;
 }
 
 /** Any subset of the PATCH /api/auth/me body. */
