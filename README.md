@@ -17,6 +17,36 @@ The web client for [**flick**](https://github.com/one-more-refactor/flick) — S
 
 ![themes](docs/media/themes.gif)
 
+## How it's shaped
+
+No router library — one state machine in `App.svelte`, with URL routing + back-button support layered on:
+
+```mermaid
+stateDiagram-v2
+    [*] --> landing
+    landing --> library : Start reading (mints a guest)
+    landing --> auth : log in
+    auth --> onboarding : new account
+    auth --> library : returning
+    onboarding --> library : done / skip
+    library --> reader : open a book (/read/id)
+    reader --> library : esc / back
+    library --> stats
+    stats --> library
+    library --> premium
+    premium --> library
+```
+
+The reader never computes pacing — it plays server timelines on a rAF accumulator:
+
+```mermaid
+flowchart LR
+    api["GET /api/books/:id/timeline"] --> tl["timeline<br/>[text, orp, weight] …"]
+    tl --> sched["rAF accumulator<br/>dwell = weight × 60000 / wpm"]
+    sched --> word["ORP word<br/>pivot fixed, accent colored"]
+    sched -- "~5 s + pause/exit" --> ckpt["PUT position + words read"]
+```
+
 ## Design law
 
 Monospace only. Square corners. **One** accent at a time. No gradients, glows, or shadows. Motion is earned (Web Animations API, not a library — the flashy stuff lives in [flick-landing](https://github.com/one-more-refactor/flick-landing)).
