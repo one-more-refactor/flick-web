@@ -1,42 +1,36 @@
 # flick-web
 
-The reference web client for [**flick**](https://github.com/one-more-refactor/flick) — a [Svelte 5](https://svelte.dev) + [Vite](https://vite.dev) single-page app, built with [Bun](https://bun.sh).
+[![ci](https://github.com/one-more-refactor/flick-web/actions/workflows/ci.yml/badge.svg)](https://github.com/one-more-refactor/flick-web/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-web/releases/latest)
+[![commits since](https://img.shields.io/github/commits-since/one-more-refactor/flick-web/latest?labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-web/compare)
+[![license](https://img.shields.io/badge/license-AGPL--3.0-d32f2f?labelColor=111111)](LICENSE)
 
-It is a pure client of the [flick API](https://github.com/one-more-refactor/flick-backend) — everything it does goes through the endpoints in [`CONTRACTS.md`](https://github.com/one-more-refactor/flick/blob/master/docs/CONTRACTS.md). In production the [backend](https://github.com/one-more-refactor/flick-backend) serves the built output at `/`; in development Vite proxies `/api` to the server.
+The web client for [**flick**](https://github.com/one-more-refactor/flick) — Svelte 5 + Vite, built with Bun. A pure client of the [flick API](https://github.com/one-more-refactor/flick-backend); the contract is [`CONTRACTS.md`](https://github.com/one-more-refactor/flick/blob/master/docs/CONTRACTS.md).
 
-![the reader](docs/screenshots/reader.png)
+![the reader, playing](docs/media/reader.gif)
 
-## What's in here
+- **Reader** — frame-accurate rAF scheduler, fixed ORP pivot, scrubber, WPM control, sentence stepping, context ribbon.
+- **Library** — paste, PDF, EPUB, `.txt`, Kindle clippings, or a URL; full-text search; tags; trash with restore.
+- **Habit** — streaks, daily goal, stats, a year-in-review "wrapped", friends + shared links.
+- **Guest-first** — read with no account; sign up later and your library merges in.
+- **Craft** — six themes × light/dark, i18n (en/de/es), installable PWA.
 
-- **The reader** — the RSVP engine's front-end: a frame-accurate, `requestAnimationFrame`-accumulator scheduler (never `setTimeout`), the ORP pivot rendered fixed, a scrubber, WPM control, sentence stepping, and a context ribbon.
-- **The library** — paste, PDF, EPUB, `.txt`, Kindle clippings, or a URL; full-text search; tags; trash with restore. Your position follows you.
-- **Habit layer** — day streak, daily goal, reading stats, a year-in-review "wrapped", and a light social layer (friends, shared links).
-- **Guest-first** — start reading with no account; sign up later and your library merges in.
-- **Craft** — three themes, one switchable accent, i18n (English, German, Spanish), installable PWA.
-
-![the library](docs/screenshots/library.png)
+![themes](docs/media/themes.gif)
 
 ## Design law
 
-This client follows a deliberately strict house style (see [CONTRACTS.md](https://github.com/one-more-refactor/flick/blob/master/docs/CONTRACTS.md)):
-
-- **Monospace only.** Square corners. **One** accent colour at a time.
-- **No gradients, glows, drop-shadows, or scanline gimmicks.**
-- **Motion is earned** — the Web Animations API and `IntersectionObserver`, not a heavy animation library. (The flashy marketing motion lives in [flick-landing](https://github.com/one-more-refactor/flick-landing), which is not part of this AGPL client.)
+Monospace only. Square corners. **One** accent at a time. No gradients, glows, or shadows. Motion is earned (Web Animations API, not a library — the flashy stuff lives in [flick-landing](https://github.com/one-more-refactor/flick-landing)).
 
 ## Develop
 
-Needs the [backend](https://github.com/one-more-refactor/flick-backend) running on `:8484` (Vite proxies `/api` to it).
+Needs the [backend](https://github.com/one-more-refactor/flick-backend) on `:8484` (Vite proxies `/api`).
 
 ```sh
-bun install
-bun run dev        # http://localhost:5173
+bun install && bun run dev   # http://localhost:5173
+bun run check && bun run build
 ```
 
-```sh
-bun run check      # svelte-check + tsc
-bun run build      # → dist/   (served by flick-server)
-```
+Releases: bump `package.json`, tag `vX.Y.Z`, push the tag — CI verifies the version matches, runs the checks, and publishes the release.
 
 ## License
 
