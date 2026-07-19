@@ -49,10 +49,12 @@
       return {
         font: ['s', 'm', 'l', 'xl'].includes(raw.font) ? raw.font : 'm',
         guides: raw.guides !== false,
-        context: raw.context === true,
+        // Sentence/context view is on by default (v0.12); a reader who has
+        // explicitly turned it off (stored false) keeps it off.
+        context: raw.context !== false,
       };
     } catch {
-      return { font: 'm', guides: true, context: false };
+      return { font: 'm', guides: true, context: true };
     }
   }
   let prefs = $state<ReaderPrefs>(loadPrefs());

@@ -299,6 +299,35 @@
         .catch(() => {});
     }, 250);
   }
+
+  // Progressive reveal (v0.12): the home shows the latest slice of the ALL
+  // list; the rest loads as you scroll (a sentinel near the end pulls more in).
+  // Search results and a fresh filter always start from the top.
+  const PAGE = 8;
+  let visible = $state(PAGE);
+  const baseList = $derived(results ?? listBooks);
+  const shownList = $derived(baseList.slice(0, visible));
+  const hasMore = $derived(shownList.length < baseList.length);
+  // reset the window whenever the working set changes (search / tag filter)
+  $effect(() => {
+    query;
+    activeTag;
+    results;
+    visible = PAGE;
+  });
+  let moreEl = $state<HTMLElement | null>(null);
+  $effect(() => {
+    const el = moreEl;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) visible += PAGE;
+      },
+      { rootMargin: '220px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  });
 </script>
 
 <div class="wrap lib">
@@ -378,16 +407,26 @@
       {/if}
       <i></i>
       {#if user.uploads && user.uploads.limit !== null}
-        <div
-          class="upwrap"
-          title="{user.uploads.used}/{user.uploads.limit} · {allowance} {t('uploads_left')}"
+        <button
+          class="imports"
+          class:low={(allowance ?? 0) <= 3}
+          type="button"
+          onclick={onPremium}
+          title={t('imports_unlimited')}
         >
-          <div class="upbar">
-            <i style="width: {Math.min(100, (user.uploads.used / user.uploads.limit) * 100)}%"
-            ></i>
-          </div>
-          <span class="uplabel">{user.uploads.used}/{user.uploads.limit}</span>
-        </div>
+          <span class="imeter" aria-hidden="true">
+            {#each Array.from({ length: user.uploads.limit }) as _, i (i)}
+              <b class:used={i < user.uploads.used}></b>
+            {/each}
+          </span>
+          <span class="itxt">
+            {#if (allowance ?? 0) <= 0}
+              {t('imports_used_wk')}
+            {:else}
+              <b>{allowance}</b> {t('imports_left_wk')}
+            {/if}
+          </span>
+        </button>
       {/if}
       <button class="btn addbtn" type="button" onclick={() => (wizardOpen = true)}>
         + {t('add')}
@@ -446,7 +485,7 @@
       {:else if results === null && listBooks.length === 0 && activeTag !== null}
         <div class="empty">— #{activeTag} —</div>
       {:else}
-        {#each results ?? listBooks as b (b.id)}
+        {#each shownList as b (b.id)}
           <div
             class="rowbook"
             class:arm={confirming === b.id}
@@ -530,6 +569,16 @@
             {/if}
           </div>
         {/each}
+        {#if hasMore}
+          <button
+            class="showmore"
+            type="button"
+            bind:this={moreEl}
+            onclick={() => (visible += PAGE)}
+          >
+            {t('show_more')} <span class="smx" aria-hidden="true">↓</span>
+          </button>
+        {/if}
       {/if}
     </div>
 

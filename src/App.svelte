@@ -464,13 +464,6 @@
     if (!acctOpen) acctConfirmDel = false;
   });
 
-  /** Remaining weekly uploads for the top-bar meter (hosted free plan only). */
-  const uploadsLeft = $derived(
-    edition === 'hosted' && user && user.uploads && user.uploads.limit !== null
-      ? Math.max(0, user.uploads.limit - user.uploads.used)
-      : null,
-  );
-
   /** First glyph for the avatar placeholder when there's no picture. */
   const initial = $derived((who ?? '?').trim().charAt(0).toUpperCase() || '?');
 
@@ -542,8 +535,8 @@
               {t('ev_invite')}
             </button>
           {:else}
-            <button class="link brk premium" type="button" onclick={goPremium}>
-              {t('go_premium')}
+            <button class="prem3d" type="button" onclick={goPremium}>
+              <span class="pstar" aria-hidden="true">◆</span>{t('go_premium')}
             </button>
           {/if}
         {/if}
@@ -567,21 +560,6 @@
                 <b>{Math.min(100, Math.round((chip.today / chip.goal) * 100))}%</b>
                 <span class="stlab">{t('goal_today')}</span>
               </span>
-            </span>
-          </button>
-        {/if}
-        {#if uploadsLeft !== null}
-          <button
-            class="uptop"
-            type="button"
-            onclick={goPremium}
-            title="{uploadsLeft} {t('uploads_left')}"
-            aria-label="{uploadsLeft} {t('uploads_left')}"
-          >
-            <span class="upn">{uploadsLeft}</span>
-            <span class="uparr">↑</span>
-            <span class="upmeter" aria-hidden="true">
-              <i style="width: {Math.min(100, ((user?.uploads?.used ?? 0) / (user?.uploads?.limit || 1)) * 100)}%"></i>
             </span>
           </button>
         {/if}

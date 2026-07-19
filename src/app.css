@@ -68,10 +68,14 @@
 
 /* ---------- base ---------- */
 * { box-sizing: border-box; }
-html { height: 100%; }
+/* native feel: no grey tap flash, no iOS font inflation on rotate, no
+   rubber-band past the app on standalone/PWA. */
+* { -webkit-tap-highlight-color: transparent; }
+html { height: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   margin: 0;
   min-height: 100%;
+  overscroll-behavior-y: none;
   background: var(--bg);
   color: var(--ink);
   font-family: ui-monospace, 'JetBrains Mono', 'SF Mono', 'Cascadia Mono', Menlo, Consolas,
@@ -99,10 +103,16 @@ textarea {
 }
 a { color: inherit; }
 
-#app { min-height: 100vh; }
-.page { min-height: 100vh; display: flex; flex-direction: column; }
+#app { min-height: 100vh; min-height: 100dvh; }
+.page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 .page > main { flex: 1; }
-.wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 0 28px; }
+.wrap {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  /* honour the notch in landscape / standalone; 28px otherwise */
+  padding: 0 max(28px, env(safe-area-inset-right)) 0 max(28px, env(safe-area-inset-left));
+}
 
 /* dot-grid texture — visible only when --tex is 1 (signal) */
 .grid { position: relative; }
@@ -203,8 +213,6 @@ header.top .wrap {
 .brk:hover::before, .brk:hover::after { opacity: 1; transform: none; }
 .brk .x { color: var(--dim); margin-left: 3px; font-size: 10px; transition: color 160ms; }
 .brk:hover .x { color: var(--accent); }
-.premium { color: var(--accent); }
-.premium:hover { color: var(--ink); }
 
 /* create account — accent block slides in behind the label (flat, no fades) */
 .acct {
@@ -267,10 +275,7 @@ header.top .wrap {
 }
 @media (max-width: 600px) {
   .navr { gap: 10px; }
-  .loginlink, .premium { display: none; }
-  /* the uploads meter stays — "more visible" (v0.8); trim it to the count */
-  .uptop { padding: 0 6px; gap: 2px; }
-  .uptop .upmeter { display: none; }
+  .loginlink { display: none; }
   /* swatch-only theme chip on phones */
   .thbtn .thname { display: none; }
   .thbtn { padding: 0 7px; }
@@ -511,22 +516,49 @@ footer.app .wrap {
   .gh3d { display: none; }
 }
 
-/* top-bar remaining-uploads meter (hosted free, v0.8) */
-.uptop {
+/* GO PREMIUM — the brand CTA as a 3D block (v0.12): a solid accent face over
+   an ink extrude (::before). The mirror of the GitHub button, filled the other
+   way round so the money button reads the loudest thing in the bar. Same press
+   physics; the extrude is a solid offset element, never a blurred shadow. */
+.prem3d {
+  /* position:relative WITHOUT z-index — same reason as .gh3d */
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 5px;
   height: 24px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  color: var(--dim);
-  transition: border-color 160ms, color 160ms;
+  margin-right: 3px; /* room for the 3px extrude */
+  padding: 0 12px;
+  border: 1px solid var(--ink);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: transform 140ms var(--ease);
 }
-.uptop:hover { border-color: var(--accent); color: var(--ink); }
-.uptop .upn { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink); }
-.uptop .uparr { font-size: 9px; color: var(--accent); }
-.uptop .upmeter { width: 24px; height: 3px; background: var(--line); margin-left: 2px; }
-.uptop .upmeter i { display: block; height: 100%; background: var(--accent); transition: width 300ms var(--ease); }
+.prem3d::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  background: var(--ink);
+  transform: translate(3px, 3px);
+  transition: transform 140ms var(--ease);
+}
+/* noir's accent IS the ink, so give the extrude a neutral tone to stay visible */
+:root[data-theme='noir'] .prem3d::before { background: var(--dim); }
+.prem3d .pstar { font-size: 9px; line-height: 1; }
+.prem3d:hover { transform: translate(-1px, -1px); }
+.prem3d:hover::before { transform: translate(4px, 4px); }
+.prem3d:active { transform: translate(3px, 3px); }
+.prem3d:active::before { transform: translate(0, 0); }
+.prem3d:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .prem3d, .prem3d::before { transition: none; }
+}
 
 /* account: square avatar button + dropdown menu (v0.8) */
 .acctwrap { position: relative; }
@@ -597,7 +629,7 @@ footer.app .wrap {
 .accitem.del { color: var(--accent); }
 .accitem.del:hover { color: var(--bg); background: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
-  .accitem, .uptop .upmeter i { transition: none; }
+  .accitem { transition: none; }
 }
 
 .langs { display: flex; gap: 8px; }
@@ -824,6 +856,11 @@ footer.app .wrap {
 }
 .rowbook .rdel:hover .lid { transform: rotate(-22deg) translateY(-0.7px); }
 .rowbook .rdel:active { transform: translateY(1px); }
+/* quiet until the row is engaged (always present on touch, like # and ») */
+@media (hover: hover) {
+  .rowbook .rdel { opacity: 0; transition: opacity 140ms, background 160ms, color 160ms, border-color 160ms; }
+  .rowbook:hover .rdel, .rowbook:focus-within .rdel { opacity: 1; }
+}
 /* armed: the whole row carries the delete state — blinking accent outline,
    tinted ground, struck title, y/n inline */
 .rowbook.arm {
@@ -838,6 +875,22 @@ footer.app .wrap {
 .armq .linklike b { color: var(--accent); }
 @keyframes armblink { 50% { outline-color: transparent; } }
 .list .empty { padding: 34px 18px; text-align: center; font-size: 12px; color: var(--dim); letter-spacing: 0.08em; }
+
+/* progressive-reveal sentinel: doubles as a tap affordance if you beat the
+   scroll observer to it. Quiet hairline row, accent on approach. */
+.showmore {
+  display: block;
+  width: 100%;
+  padding: 13px 18px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  transition: color 160ms, background 160ms;
+}
+.showmore:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.showmore .smx { color: var(--accent); }
 
 .statsrow { display: flex; gap: 40px; margin-top: 26px; padding: 22px 4px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .stat .dm { display: flex; gap: 5px; }
@@ -1221,8 +1274,9 @@ input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-of
 
 /* ---------- phone (<640px) ---------- */
 @media (max-width: 640px) {
-  .wrap { padding: 0 18px; }
+  .wrap { padding: 0 max(18px, env(safe-area-inset-right)) 0 max(18px, env(safe-area-inset-left)); }
   header.top .wrap { padding-top: calc(14px + env(safe-area-inset-top)); }
+  footer.app .wrap { padding-bottom: calc(30px + env(safe-area-inset-bottom)); }
   .statsrow { gap: 26px; }
   .rcards { grid-template-columns: 1fr; }
 
@@ -1623,25 +1677,36 @@ input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-of
 .sface.f1 b { color: var(--accent); }
 .sface.f1 .stlab { font-size: 8px; letter-spacing: 0.14em; color: var(--dim); text-transform: uppercase; }
 
-/* uploads-left bar (hosted): grows on hover, label slides in */
-.upwrap { display: inline-flex; align-items: center; gap: 8px; cursor: default; }
-.upwrap .upbar {
-  width: 64px;
-  height: 5px;
-  background: var(--line);
-  overflow: hidden;
-  transition: height 160ms var(--ease);
-}
-.upwrap .upbar i { display: block; height: 100%; background: var(--accent); transition: width 300ms var(--ease); }
-.upwrap .uplabel {
-  font-size: 10px;
+/* weekly free-imports indicator (hosted free, v0.12): a segmented gauge — one
+   tick per weekly import, accent = still available, faded = spent — plus a
+   plain-language count. Reads at a glance, says what it is, and taps through to
+   Pro (unlimited). Replaces the cryptic "3/15" bar. */
+.imports {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 26px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
   color: var(--dim);
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity 160ms, transform 200ms var(--ease);
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transition: border-color 160ms, color 160ms;
 }
-.upwrap:hover .upbar { height: 9px; }
-.upwrap:hover .uplabel { opacity: 1; transform: none; }
+.imports:hover { border-color: var(--accent); color: var(--ink); }
+.imports .imeter { display: inline-flex; gap: 2px; flex: none; }
+.imports .imeter b { width: 3px; height: 11px; background: var(--accent); transition: background 200ms; }
+.imports .imeter b.used { background: var(--line); }
+.imports .itxt b { color: var(--ink); font-weight: 700; }
+.imports.low { border-color: var(--accent); color: var(--accent); }
+.imports.low .itxt b { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .imports .imeter b { transition: none; } }
+@media (max-width: 560px) {
+  /* on phones the gauge alone carries it — drop the words to keep the row calm */
+  .imports .itxt { display: none; }
+  .imports { padding: 0 8px; }
+}
 
 /* guest banner with real presence */
 .guestrow {
@@ -2238,4 +2303,28 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .dropover, .gatewrap, .gatecard, .droptoast { animation: none; }
   .droptoast .tspin { animation: none; }
+}
+
+/* ---------- desktop (≥1024px) ----------
+   A real desktop presence, not a stretched phone: the library breathes wider
+   and the ALL list becomes two columns. Separators are drawn by a 1px grid
+   gap over the line colour (hairlines both ways) — still square, still flat. */
+@media (min-width: 1024px) {
+  .wrap.lib { max-width: 940px; }
+  .lib .list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+  }
+  .lib .rowbook { border-top: none; background: var(--panel); }
+  .lib .rowbook:first-child { border-top: none; }
+  .lib .rowbook:hover { background: color-mix(in srgb, var(--accent) 5%, var(--panel)); }
+  /* full-width children of the grid */
+  .lib .list .empty,
+  .lib .showmore {
+    grid-column: 1 / -1;
+    background: var(--panel);
+    border-top: none;
+  }
 }
