@@ -5,7 +5,7 @@
   import * as api from './api';
   import type { Book, Stats, Timeline, TrashItem, User } from './api';
   import { t } from './i18n.svelte';
-  import DotNumber from './DotNumber.svelte';
+  import FlipCounter from './FlipCounter.svelte';
   import Wizard from './Wizard.svelte';
   import ShareMenu from './ShareMenu.svelte';
 
@@ -337,7 +337,7 @@
     <div class="who">{#if !user.guest}@<b>{who}</b>{/if}</div>
     <div class="statsrow compact">
       <button class="stat statlink" type="button" onclick={onStats}>
-        <DotNumber value={stats?.streak.current ?? 0} grid={3.2} />
+        <FlipCounter value={stats?.streak.current ?? 0} size={26} />
         <div class="goalmini" aria-hidden="true">
           <i
             style="width: {Math.min(
