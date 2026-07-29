@@ -1,9 +1,9 @@
 # flick-web
 
 [![ci](https://github.com/one-more-refactor/flick-web/actions/workflows/ci.yml/badge.svg)](https://github.com/one-more-refactor/flick-web/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-web/releases/latest)
-[![commits since](https://img.shields.io/github/commits-since/one-more-refactor/flick-web/latest?labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-web/compare)
-[![license](https://img.shields.io/badge/license-AGPL--3.0-d32f2f?labelColor=111111)](LICENSE)
+[![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-web/releases/latest)
+[![commits since](https://img.shields.io/github/commits-since/one-more-refactor/flick-web/latest?labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-web/compare)
+[![license](https://img.shields.io/badge/license-AGPL--3.0-f2ede5?labelColor=111111)](LICENSE)
 
 The web client for [**flick**](https://github.com/one-more-refactor/flick) — Svelte 5 + Vite, built with Bun. A pure client of the [flick API](https://github.com/one-more-refactor/flick-backend); the contract is [`CONTRACTS.md`](https://github.com/one-more-refactor/flick/blob/master/docs/CONTRACTS.md).
 
