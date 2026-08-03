@@ -6,7 +6,6 @@
   import { themeState, THEME_NAMES, THEME_SWATCH } from './lib/theme.svelte';
   import { i18n, t } from './lib/i18n.svelte';
   import * as nav from './lib/nav';
-  import Landing from './lib/Landing.svelte';
   import Auth from './lib/Auth.svelte';
   import Onboarding from './lib/Onboarding.svelte';
   import Library from './lib/Library.svelte';
@@ -22,7 +21,6 @@
 
   type View =
     | { name: 'boot' }
-    | { name: 'landing' }
     | { name: 'auth' }
     | { name: 'onboarding' }
     | { name: 'library' }
@@ -64,10 +62,16 @@
     bannerGone = true;
   }
 
+  /** The front door is the static landing at the site root now (landing/,
+   *  Astro). Leaving the SPA is a real navigation, not a view change. */
+  function toLanding() {
+    location.replace('/');
+  }
+
   // Any 401 from a non-auth endpoint means the session is gone — back to the door.
   api.setUnauthorizedHandler(() => {
     user = null;
-    go({ name: 'landing' }, 'replace');
+    toLanding();
   });
 
   // ---- top-bar streak chip (v0.5.1): the habit, front and center.
@@ -156,14 +160,19 @@
       return;
     }
     if (route.name === 'refland') {
-      // /r/:code — remember the referrer, then act like the front door.
+      // /r/:code — remember the referrer, then act like the front door. The
+      // stored code applies when the landing CTA mints the guest.
       try {
         localStorage.setItem('flick.ref', route.code);
       } catch {
         // storage unavailable — the visit still works
       }
-      nav.replace({ name: 'home' });
-      view = user ? { name: 'library' } : { name: 'landing' };
+      if (user) {
+        nav.replace({ name: 'home' });
+        view = { name: 'library' };
+      } else {
+        toLanding();
+      }
       return;
     }
     if (route.name === 'friendland') {
@@ -181,17 +190,17 @@
         } catch {
           // ignore
         }
-        nav.replace({ name: 'home' });
-        view = { name: 'landing' };
+        toLanding();
       }
       return;
     }
     if (route.name === 'wrapped') {
-      view = user ? { name: 'wrapped' } : { name: 'landing' };
+      if (user) view = { name: 'wrapped' };
+      else toLanding();
       return;
     }
     if (!user) {
-      view = { name: 'landing' };
+      toLanding();
       return;
     }
     switch (route.name) {
@@ -226,8 +235,23 @@
     } catch {
       user = null;
     }
+    // ?start=1 — the landing's guest-first CTA: mint a guest, straight to the
+    // library. Returning users (live session) skip the mint and land there too.
+    if (!user && new URLSearchParams(location.search).has('start')) {
+      history.replaceState({}, '', nav.pathFor({ name: 'home' }));
+      const u = await startGuest();
+      if (u) {
+        view = { name: 'library' };
+        return;
+      }
+      toLanding();
+      return;
+    }
     await applyRoute(nav.parsePath(location.pathname));
-    if (view.name === 'boot') view = user ? { name: 'library' } : { name: 'landing' };
+    if (view.name === 'boot') {
+      if (user) view = { name: 'library' };
+      else toLanding();
+    }
   }
   boot();
 
@@ -248,50 +272,6 @@
       return null;
     } finally {
       starting = false;
-    }
-  }
-
-  async function onStart() {
-    const u = await startGuest();
-    if (u) go({ name: 'library' });
-  }
-
-  /** Landing catalog pick: session (guest if needed) → open the pre-seeded
-   *  copy (409 carries its id, contract v0.4.1) or add-then-open. */
-  async function onPick(slug: string) {
-    const u = await startGuest();
-    if (!u) return;
-    try {
-      const added = await api.catalogAdd(slug);
-      const [fresh, tl] = await Promise.all([api.book(added.id), api.timeline(added.id)]);
-      onRead(fresh, tl);
-    } catch (err) {
-      if (err instanceof api.ApiError && err.status === 409 && err.bookId) {
-        try {
-          const [fresh, tl] = await Promise.all([api.book(err.bookId), api.timeline(err.bookId)]);
-          onRead(fresh, tl);
-          return;
-        } catch {
-          // fall through to the library
-        }
-      }
-      go({ name: 'library' });
-    }
-  }
-
-  /** Landing quick-read: drop a file → guest → import → reader, one gesture. */
-  let quickErr = $state<string | null>(null);
-  async function onQuickFile(file: File) {
-    quickErr = null;
-    const u = await startGuest();
-    if (!u) return;
-    try {
-      const book = await api.createBookFromFile(file);
-      const tl = await api.timeline(book.id);
-      onRead(book, tl);
-    } catch (err) {
-      quickErr = err instanceof Error ? err.message : t('err_generic');
-      go({ name: 'library' });
     }
   }
 
@@ -382,7 +362,7 @@
     chip = null;
     themeState.detach();
     i18n.detach();
-    go({ name: 'landing' }, 'replace');
+    toLanding();
   }
 
   const LANGS: Lang[] = ['auto', 'en', 'de', 'es'];
@@ -456,7 +436,7 @@
     chip = null;
     themeState.detach();
     i18n.detach();
-    go({ name: 'landing' }, 'replace');
+    toLanding();
   }
 
   // closing the account menu resets the delete confirmation
@@ -700,21 +680,11 @@
           <div class="wrap" style="padding-top: 40px">
             <div class="status">connecting<span class="cur">_</span></div>
           </div>
-        {:else if view.name === 'landing'}
-          <Landing
-            {onStart}
-            onLogin={() => go({ name: 'auth' })}
-            {onPick}
-            {onQuickFile}
-            {edition}
-            {starting}
-            error={quickErr}
-          />
         {:else if view.name === 'auth'}
           <Auth
             {onAuthed}
             guest={user?.guest ?? false}
-            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+            onBack={() => (user ? go({ name: 'library' }) : toLanding())}
           />
         {:else if view.name === 'onboarding' && user}
           <Onboarding {user} onDone={onOnboarded} />
@@ -743,19 +713,19 @@
         {:else if view.name === 'premium'}
           <Premium
             {edition}
-            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+            onBack={() => (user ? go({ name: 'library' }) : toLanding())}
           />
         {:else if view.name === 'shared'}
           <SharedLanding
             token={view.token}
             onStart={onSharedStart}
             onRead={onSharedRead}
-            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+            onBack={() => (user ? go({ name: 'library' }) : toLanding())}
           />
         {:else if view.name === 'invite'}
           <Invite
             {user}
-            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+            onBack={() => (user ? go({ name: 'library' }) : toLanding())}
             onAuth={() => go({ name: 'auth' })}
           />
         {:else if view.name === 'wrapped'}

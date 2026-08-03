@@ -1,11 +1,8 @@
-# flick-landing
+# landing
 
-[![ci](https://github.com/one-more-refactor/flick-landing/actions/workflows/ci.yml/badge.svg)](https://github.com/one-more-refactor/flick-landing/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/one-more-refactor/flick-landing?labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-landing/releases/latest)
-[![commits since](https://img.shields.io/github/commits-since/one-more-refactor/flick-landing/latest?labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-landing/compare)
 [![license](https://img.shields.io/badge/license-MIT-f2ede5?labelColor=111111)](LICENSE)
 
-The marketing site for [**flick**](https://github.com/one-more-refactor/flick) — the hosted service at **[myflick.app](https://myflick.app)**. Hosted-only: the self-hosted edition ships its own in-app guest door and never needs this.
+The marketing site for [**flick**](https://github.com/one-more-refactor/flick) at **[myflick.app](https://myflick.app)** — formerly the separate flick-landing repo, now the `landing/` workspace of flick-web. It owns the site root; the app is served under `/app/` from the same build.
 
 ![flick.landing](docs/screenshots/landing.png)
 
@@ -34,12 +31,12 @@ Design tokens ported from the app (`src/styles/tokens.css`): monospace, square c
 ## Develop / Deploy
 
 ```sh
-bun install && bun run dev    # http://localhost:4321
-bun run build                 # -> dist/
-podman build -t flick-landing -f deploy/Containerfile .   # nginx:alpine, rootless, behind a CF tunnel
+bun install                   # once, at the repo root (workspaces)
+bun run dev:landing           # from the root — http://localhost:4321
+bun run build                 # from the root — landing into dist/, app into dist/app/
 ```
 
-Releases: bump `package.json`, tag `vX.Y.Z`, push — CI verifies the version, builds, and publishes the release.
+No separate deployment: the flick-backend image serves the combined `dist/` — the landing at `/`, the SPA at `/app/`. The old nginx container and quadlet unit are retired.
 
 ## License
 

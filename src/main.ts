@@ -8,7 +8,7 @@ const app = mount(App, { target: document.getElementById('app')! });
 // works identically when this never runs — the SW is pure progressive polish.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
       // registration failure is fine — the app does not depend on the SW
     });
   });

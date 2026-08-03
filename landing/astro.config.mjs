@@ -9,5 +9,9 @@ export default defineConfig({
   // Everything is prerendered to static HTML; the interactive bits (hero
   // reader, scroll motion, ambient background) are client-side islands.
   output: 'static',
+  // The landing owns dist/ at the repo root; the SPA builds into dist/app/
+  // afterwards (see the root package.json build script — order matters, this
+  // build empties dist/ first).
+  outDir: '../dist',
   build: { inlineStylesheets: 'auto' },
 });

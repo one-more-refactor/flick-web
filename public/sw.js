@@ -1,16 +1,16 @@
 // flick — service worker. Cache-first app shell; /api/* is NEVER cached.
 // The app must work identically without this file (registration is optional).
 
-const VERSION = 'flick-shell-v0.2.0';
+const VERSION = 'flick-shell-v0.3.0';
 
 const SHELL = [
-  '/',
-  '/manifest.webmanifest',
-  '/icons/icon.svg',
-  '/icons/icon-maskable.svg',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-512-maskable.png',
+  '/app/',
+  '/app/manifest.webmanifest',
+  '/app/icons/icon.svg',
+  '/app/icons/icon-maskable.svg',
+  '/app/icons/icon-192.png',
+  '/app/icons/icon-512.png',
+  '/app/icons/icon-512-maskable.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req).catch(() =>
-        caches.match('/').then((hit) => hit ?? Response.error()),
+        caches.match('/app/').then((hit) => hit ?? Response.error()),
       ),
     );
     return;

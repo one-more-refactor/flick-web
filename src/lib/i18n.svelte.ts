@@ -209,13 +209,9 @@ const DICT: Dict = {
 
   // landing
   start_reading: { en: 'Start reading', de: 'Loslesen' },
-  already_here: { en: 'already here?', de: 'schon dabei?' },
-  log_in_low: { en: 'log in', de: 'anmelden' },
-  pick_one_up: { en: 'or pick one up', de: 'oder greif eins auf' },
   min: { en: 'min', de: 'Min' },
 
   // landing quick-read
-  quick_read: { en: 'or drop your own file — start reading it now', de: 'oder leg deine eigene Datei ab — lies sofort los' },
 
   // plans / contribute
   plans_promise: { en: "what's free stays free", de: 'was gratis ist, bleibt gratis' },
@@ -373,36 +369,6 @@ const DICT: Dict = {
   shared_read_go: { en: 'Read now', de: 'Jetzt lesen' },
 
   // v0.8: landing redesign (how-it-works, numbers, spec sheet)
-  lp_how_lead: { en: 'how it works', de: 'so funktioniert’s' },
-  lp_how1_t: { en: 'one word at a time', de: 'ein Wort nach dem anderen' },
-  lp_how1_d: {
-    en: 'No pages, no columns, no lines to track. The text comes to you — one word, always in the same place.',
-    de: 'Keine Seiten, keine Spalten, keine Zeilen. Der Text kommt zu dir — ein Wort, immer an derselben Stelle.',
-  },
-  lp_how2_t: { en: 'the pivot letter', de: 'der Fixpunkt' },
-  lp_how2_d: {
-    en: 'One letter is set in the accent — the optimal recognition point. Every word lands aligned to it, so your eye locks on and never travels.',
-    de: 'Ein Buchstabe steht in der Akzentfarbe — der optimale Erkennungspunkt. Jedes Wort richtet sich daran aus, dein Auge rastet ein und wandert nie.',
-  },
-  lp_how3_t: { en: 'your pace', de: 'dein Tempo' },
-  lp_how3_d: {
-    en: 'Push the speed until the words just barely break apart, then back off a notch. That is your pace — and it climbs with practice.',
-    de: 'Dreh das Tempo hoch, bis die Wörter gerade zu zerfallen beginnen, dann geh einen Tick zurück. Das ist dein Tempo — und es wächst mit Übung.',
-  },
-  lp_num_lead: { en: 'the numbers', de: 'die Zahlen' },
-  lp_num_avg: { en: 'the average reader', de: 'der Durchschnittsleser' },
-  lp_num_demo: { en: 'the demo above', de: 'die Demo oben' },
-  lp_num_saccades: { en: 'your eye stays put', de: 'dein Auge bleibt still' },
-  lp_spec_engine_k: { en: 'engine', de: 'Engine' },
-  lp_spec_engine_v: { en: 'rust + svelte · AGPL open source', de: 'Rust + Svelte · AGPL, quelloffen' },
-  lp_spec_privacy_k: { en: 'privacy', de: 'Privatsphäre' },
-  lp_spec_privacy_v: {
-    en: 'self-hostable — your library stays yours',
-    de: 'selbst hostbar — deine Bibliothek bleibt deine',
-  },
-  lp_spec_formats_k: { en: 'formats', de: 'Formate' },
-  lp_spec_formats_v: { en: 'pdf · epub · txt · md · url · paste', de: 'pdf · epub · txt · md · url · einfügen' },
-  lp_spec_source_k: { en: 'source', de: 'Quellcode' },
 
   // drop-anywhere overlay + indicators (v0.11)
   drop_to_add: { en: 'drop to add', de: 'ablegen zum Hinzufügen' },
