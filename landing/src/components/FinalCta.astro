@@ -1,0 +1,40 @@
+---
+// The last word: the hero's masked-line move, once more, at full size.
+import { APP_URL } from '../config';
+---
+
+<section class="final section">
+  <div class="wrap">
+    <p class="sec-label center" data-reveal>The last word</p>
+    <h2 class="fin-h">
+      <span class="fin-mask"><span class="fin-line">Your reading list</span></span>
+      <span class="fin-mask"><span class="fin-line">doesn't stand a chance.</span></span>
+    </h2>
+    <div class="row" data-reveal>
+      <a class="btn" href={APP_URL}>Start reading <span class="ar">→</span></a>
+    </div>
+    <p class="micro" data-reveal>free · no account · no tracking · AGPL</p>
+  </div>
+</section>
+
+<style>
+  .final { text-align: center; padding-block: clamp(96px, 16vh, 180px); }
+  .center { justify-content: center; }
+  .fin-h {
+    font-size: clamp(30px, 6vw, 58px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 34px;
+  }
+  .fin-mask { display: block; overflow: hidden; }
+  .fin-line { display: block; }
+  .row { display: flex; justify-content: center; }
+  .micro {
+    margin: 22px 0 0;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+</style>

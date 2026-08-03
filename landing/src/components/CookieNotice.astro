@@ -1,0 +1,158 @@
+---
+// Cookie notice — deliberately a NOTICE, not a consent gate.
+//
+// This site sets no cookies at all. It writes two localStorage keys
+// (flick.mode / flick.theme), and only when you click the theme or mode
+// toggle yourself; the app on app.myflick.app adds a strictly-necessary
+// HttpOnly login cookie. All of that is exempt from consent under
+// § 25 Abs. 2 TDDDG, so there is nothing here for a visitor to accept or
+// reject — an "accept / reject" pair would be theatre, and a reject button
+// that changes nothing is a dark pattern.
+//
+// So: say plainly what is stored, link to the full text, and let it be
+// dismissed. The dismissal itself is one more functional localStorage key.
+// Bump NOTICE_VERSION if the storage story ever changes.
+const NOTICE_VERSION = '1';
+---
+
+<aside
+  class="ck"
+  data-cookie-notice
+  data-notice-version={NOTICE_VERSION}
+  hidden
+  aria-label="Cookie and storage notice"
+>
+  <div class="ck-in">
+    <p class="ck-t">
+      <b>No cookie banner needed — so this isn't one.</b>{' '}
+      flick sets no tracking cookies, runs no analytics and loads nothing from third parties.
+      This page stores your theme choice on your own device; signing in to the app adds one
+      login cookie that keeps you signed in. That's the lot.
+    </p>
+    <div class="ck-r">
+      <a class="ck-l" href="/datenschutz/">Datenschutz</a>
+      <button class="ck-b" type="button" data-cookie-dismiss>Got it</button>
+    </div>
+  </div>
+</aside>
+
+<script is:inline>
+  (function () {
+    var el = document.querySelector('[data-cookie-notice]');
+    if (!el) return;
+    var KEY = 'flick.notice';
+    var version = el.getAttribute('data-notice-version') || '1';
+    var seen;
+    try {
+      seen = localStorage.getItem(KEY);
+    } catch (e) {
+      seen = null; // storage blocked — show it, dismissal just won't persist
+    }
+    if (seen === version) return;
+
+    el.hidden = false;
+    // The bar is fixed to the bottom, so pad the page by its height while it's
+    // up — otherwise it sits on top of the footer, which is where the Impressum
+    // and Datenschutz links live, and those must stay reachable.
+    var pad = function () {
+      document.body.style.paddingBottom = el.offsetHeight + 'px';
+    };
+    pad();
+    window.addEventListener('resize', pad);
+
+    // let it paint hidden first, then slide in
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        el.setAttribute('data-in', '');
+      });
+    });
+
+    el.querySelector('[data-cookie-dismiss]').addEventListener('click', function () {
+      el.removeAttribute('data-in');
+      window.removeEventListener('resize', pad);
+      document.body.style.paddingBottom = '';
+      try {
+        localStorage.setItem(KEY, version);
+      } catch (e) {}
+      setTimeout(function () {
+        el.hidden = true;
+      }, 260);
+    });
+  })();
+</script>
+
+<style>
+  .ck {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    transform: translateY(100%);
+    transition: transform 260ms var(--ease, cubic-bezier(0.2, 0.7, 0.2, 1));
+  }
+  .ck[data-in] { transform: translateY(0); }
+  .ck[hidden] { display: none; }
+
+  .ck-in {
+    max-width: var(--wrap, 1080px);
+    margin: 0 auto;
+    padding: 16px clamp(18px, 4vw, 32px);
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+
+  .ck-t {
+    margin: 0;
+    flex: 1 1 340px;
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--dim);
+  }
+  .ck-t b { color: var(--ink); font-weight: 700; }
+
+  .ck-r {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-shrink: 0;
+  }
+
+  .ck-l {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 160ms ease;
+  }
+  .ck-l:hover { color: var(--ink); }
+
+  .ck-b {
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: var(--ink);
+    border: 1px solid var(--ink);
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .ck-b:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ck-b:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ck { transition: none; }
+  }
+  @media (max-width: 560px) {
+    .ck-in { gap: 14px; }
+    .ck-r { width: 100%; justify-content: space-between; }
+  }
+</style>

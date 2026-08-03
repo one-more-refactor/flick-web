@@ -1,0 +1,343 @@
+---
+// The honest page. Every other speed-reading site either overclaims or gets
+// debunked; this one concedes the strongest argument against RSVP up front and
+// then shows what the product does about it. It is simultaneously the Show HN
+// defence, the highest-volume informational SEO target in the category, and the
+// clearest statement of what flick refuses to say.
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { APP_URL, SITE } from '../config';
+
+const title = 'Does speed reading work? What RSVP actually does — and where it fails';
+const description =
+  'RSVP removes eye movement, not attention. An honest look at the research on speed reading, regressions and comprehension — from the people who built a speed reader.';
+
+const MYTHS: [string, string][] = [
+  [
+    'You can read 1,000+ wpm with full comprehension',
+    'No. Comprehension — inferential comprehension especially — degrades as presentation rate climbs. The effect is well replicated. Anyone selling you four figures is selling you skimming under another name.',
+  ],
+  [
+    'Speed reading trains your peripheral vision to take whole lines',
+    'No. The fovea — the part of your retina with the acuity to resolve letters — covers about two degrees of visual angle. That is a handful of characters. No amount of practice enlarges it.',
+  ],
+  [
+    'Subvocalisation is a bad habit you can eliminate',
+    'Mostly no. The inner voice is bound up with comprehension, not merely a relic of learning to read. RSVP does reduce how much of it you need for line-tracking; it does not switch it off, and switching it off is not obviously desirable.',
+  ],
+  [
+    'RSVP eliminates wasted eye movement',
+    'Yes — this one is true, and it is the entire mechanism. Saccades and the return sweep at the end of each line are real overhead, and putting every word in the same spot removes them.',
+  ],
+];
+
+const SPEEDS: [string, string, string][] = [
+  ['600–800 wpm', 'Familiar prose, news, the newsletter backlog', 'Text you could have skimmed anyway'],
+  ['400–500 wpm', 'General reading, most non-fiction, novels', 'Where most practised readers settle'],
+  ['250–350 wpm', 'Technical writing, papers, anything you will be asked about', 'Plan a second pass'],
+  ['Don’t', 'Poetry, contracts, code, anything you must reread to parse', 'Use your eyes; that is what regressions are for'],
+];
+
+const SOURCES: [string, string, string][] = [
+  [
+    'Rayner, Schotter, Masson, Potter & Treiman (2016). So Much to Read, So Little Time: How Do We Read, and Can Speed Reading Help?',
+    'Psychological Science in the Public Interest 17(1)',
+    'https://journals.sagepub.com/doi/10.1177/1529100615623267',
+  ],
+  [
+    'Schotter, Tran & Rayner (2014). Don’t Believe What You Read (Only Once): Comprehension Is Supported by Regressions During Reading',
+    'Psychological Science 25(6)',
+    'https://journals.sagepub.com/doi/10.1177/0956797614531148',
+  ],
+  [
+    'Brysbaert (2019). How many words do we read per minute? A review and meta-analysis of reading rate',
+    'Journal of Memory and Language 109',
+    'https://www.sciencedirect.com/science/article/pii/S0749596X19300786',
+  ],
+];
+
+const faqLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Does speed reading work?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Partly. RSVP removes the eye-movement overhead of reading — saccades and the return sweep at the end of each line — which is real and worth roughly 400–500 wpm of comfortable reading against a ~238 wpm baseline. It does not increase how fast you comprehend, and comprehension degrades as the rate climbs, particularly for inferential understanding and dense text.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is RSVP reading?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Rapid Serial Visual Presentation shows text one word at a time in a fixed position, so the reader’s eyes do not move. flick additionally aligns each word on its optimal recognition point, the pivot letter the eye locks onto.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why is RSVP criticised?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Because it removes regressions. Readers routinely move their eyes back to reread a word or clause to repair a failure of comprehension, and a naive RSVP stream makes that impossible. Schotter, Tran and Rayner (2014) showed comprehension suffers when regressions are blocked.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What reading speed should I use?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '600–800 wpm for familiar or skimmable text, 400–500 wpm for general reading, 250–350 wpm with a second pass for technical material. For poetry, contracts or code, do not use RSVP at all.',
+      },
+    },
+  ],
+};
+---
+
+<Base title={title} description={description}>
+  <div class="site">
+    <Nav />
+    <main class="doc">
+      <div class="wrap">
+        <header class="head">
+          <p class="sec-label">The honest page</p>
+          <h1>RSVP removes eye movement.<br />It does not remove attention.</h1>
+          <p class="lede">
+            We build a speed reader, so treat this page with the suspicion it deserves — and
+            then check the citations at the bottom, which is why they are there. Here is what
+            the research supports, what it does not, and what we do about the part that counts
+            against us.
+          </p>
+        </header>
+
+        <section class="sec">
+          <h2>What RSVP actually does</h2>
+          <p>
+            Ordinary reading is not a smooth glide along a line. Your eyes jump — a saccade —
+            land, fixate for a fifth of a second or so, jump again, and at the end of every
+            line perform a return sweep back to the left margin. You are blind during the
+            jumps. A meaningful share of reading time is spent moving rather than reading.
+          </p>
+          <p>
+            Rapid Serial Visual Presentation deletes that overhead by putting every word in
+            the same place, one after another. There is nothing to track and nothing to sweep
+            back to. flick goes one step further and aligns each word on its optimal
+            recognition point — the pivot letter, in the accent colour — so the eye does not
+            drift within the word either.
+          </p>
+          <p>
+            That is the whole mechanism. It is real, it is measurable, and it is worth a great
+            deal. It is also the <em>only</em> thing being claimed here.
+          </p>
+        </section>
+
+        <section class="sec">
+          <h2>What it does not do</h2>
+          <dl class="myths">
+            {
+              MYTHS.map(([claim, verdict]) => (
+                <div class="myth">
+                  <dt>{claim}</dt>
+                  <dd>{verdict}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </section>
+
+        <section class="sec">
+          <h2>The strongest argument against us</h2>
+          <p>
+            Readers regress. Roughly one eye movement in ten goes backwards, and many of those
+            are not motor error — they are repair. You reach the end of a clause, discover you
+            parsed it wrong, and your eyes go back to the word that misled you. Schotter, Tran
+            and Rayner (2014) blocked exactly that, using a trailing mask so each word could be
+            read only once, and comprehension suffered. Rayner and colleagues (2016) built the
+            broader case: reading speed is limited by language processing, not by eye
+            movements, and RSVP tools in particular take away the reader's ability to reread
+            intelligently.
+          </p>
+          <p class="pull">
+            A naive RSVP stream is a text you cannot argue with. That is a real cost, and no
+            amount of product design makes it disappear.
+          </p>
+          <p>
+            The literature is not unanimous — more recent work argues lexical processing and
+            comprehension hold up better at elevated rates than the 2016 review allowed, and
+            the debate is live. But the direction of the evidence is not in our favour, and
+            you should hear that from us rather than from the top comment on Hacker News.
+          </p>
+        </section>
+
+        <section class="sec">
+          <h2>What we do about it</h2>
+          <p>
+            You cannot design regressions back into a stream that has already passed. You can
+            make going back cheap, and you can stop the stream from outrunning the reader in
+            the first place. That is most of what the engine is:
+          </p>
+          <ul class="does">
+            <li>
+              <b>Rewind by word or sentence.</b> The repair move regressions exist for, one
+              key away, without losing your place.
+            </li>
+            <li>
+              <b>Speed you change mid-passage.</b> Changing wpm is computed on your device from
+              the same timeline, so it takes effect on the next word — no round trip, no
+              reason not to slow down for three paragraphs.
+            </li>
+            <li>
+              <b>Per-word timing, not a metronome.</b> Rare words linger, common ones fly, long
+              words split, punctuation and paragraph ends get wrap-up pauses. The stream
+              already slows where reading naturally slows.
+            </li>
+            <li>
+              <b>A second pass that costs almost nothing.</b> A chapter at 450 wpm takes long
+              enough to be worth rereading at 600. Repetition is the cheapest comprehension
+              tool there is, and speed is what makes it affordable.
+            </li>
+          </ul>
+        </section>
+
+        <section class="sec">
+          <h2>What speed to actually use</h2>
+          <table class="speeds">
+            <thead>
+              <tr><th>Speed</th><th>For</th><th>Note</th></tr>
+            </thead>
+            <tbody>
+              {
+                SPEEDS.map(([s, f, n]) => (
+                  <tr>
+                    <td class="s">{s}</td>
+                    <td>{f}</td>
+                    <td class="n">{n}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+          <p class="after">
+            The average adult reads prose at about 238 wpm (Brysbaert, 2019, pooling 190
+            studies). Doubling that is an ordinary outcome. Tripling it happens on easy text.
+            If a passage needs rereading to make sense, RSVP is the wrong tool for that
+            passage — and a speed reader that will not tell you so is not worth trusting with
+            the rest.
+          </p>
+        </section>
+
+        <section class="sec">
+          <h2>Sources</h2>
+          <ol class="src">
+            {
+              SOURCES.map(([cite, where, url]) => (
+                <li>
+                  <a href={url} target="_blank" rel="noopener">{cite}</a>
+                  <span>{where}</span>
+                </li>
+              ))
+            }
+          </ol>
+        </section>
+
+        <div class="cta">
+          <a class="btn" href={APP_URL}>Try it, no account <span class="ar">→</span></a>
+          <a class="btn-ghost" href={`${SITE}/`}>back to the start</a>
+        </div>
+      </div>
+    </main>
+    <Footer />
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(faqLd)} is:inline />
+</Base>
+
+<style>
+  .doc { padding: clamp(40px, 8vh, 90px) 0 clamp(60px, 10vh, 120px); }
+  .head { max-width: 74ch; margin-bottom: clamp(40px, 7vh, 72px); }
+  .head h1 {
+    font-size: clamp(26px, 4.4vw, 42px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 22px;
+  }
+  .lede { margin: 0; color: var(--dim); font-size: 14px; line-height: 1.8; }
+
+  .sec { margin-bottom: clamp(40px, 6vh, 64px); max-width: 74ch; }
+  .sec h2 {
+    font-size: clamp(17px, 2.2vw, 22px);
+    font-weight: 700;
+    margin: 0 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sec p { margin: 0 0 16px; color: var(--dim); font-size: 13px; line-height: 1.9; }
+  .sec p em { color: var(--ink); font-style: italic; }
+
+  .pull {
+    border-left: 2px solid var(--accent);
+    padding: 2px 0 2px 18px;
+    color: var(--ink) !important;
+  }
+
+  .myths { margin: 0; }
+  .myth { border-top: 1px solid var(--line); padding: 16px 0; }
+  .myth:last-child { border-bottom: 1px solid var(--line); }
+  .myth dt { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .myth dd { margin: 0; color: var(--dim); font-size: 13px; line-height: 1.85; }
+
+  .does { margin: 0; padding: 0; list-style: none; }
+  .does li {
+    border-top: 1px solid var(--line);
+    padding: 14px 0;
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.85;
+  }
+  .does li:last-child { border-bottom: 1px solid var(--line); }
+  .does b { color: var(--ink); font-weight: 700; }
+
+  .speeds { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .speeds th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 400;
+    padding: 0 12px 10px 0;
+  }
+  .speeds td {
+    border-top: 1px solid var(--line);
+    padding: 13px 12px 13px 0;
+    color: var(--dim);
+    line-height: 1.7;
+    vertical-align: top;
+  }
+  .speeds td.s { color: var(--ink); font-weight: 700; white-space: nowrap; }
+  .speeds td.n { font-size: 11px; }
+  .after { margin-top: 20px !important; }
+
+  .src { margin: 0; padding-left: 20px; }
+  .src li { margin-bottom: 14px; font-size: 12px; line-height: 1.7; }
+  .src a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .src a:hover { color: var(--accent); }
+  .src span { display: block; color: var(--dim); font-size: 11px; margin-top: 3px; }
+
+  .cta {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding-top: clamp(20px, 4vh, 36px);
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 560px) {
+    .speeds td.n { display: none; }
+    .speeds th:last-child { display: none; }
+  }
+</style>

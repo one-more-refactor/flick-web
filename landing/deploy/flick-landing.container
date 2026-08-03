@@ -1,0 +1,24 @@
+# Quadlet unit for the flick landing site (rootless podman + systemd --user).
+# Install: copy to ~/.config/containers/systemd/ then
+#   systemctl --user daemon-reload && systemctl --user start flick-landing
+[Unit]
+Description=flick landing (myflick.app)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/one-more-refactor/flick-landing:latest
+# Track the registry digest; podman-auto-update pulls and restarts on change.
+# Enable once per host: systemctl --user enable --now podman-auto-update.timer
+# Pin to a version tag instead (e.g. :v1.2.0) to freeze this host.
+AutoUpdate=registry
+ContainerName=flick-landing
+# Loopback only — served through Cloudflare Tunnel.
+PublishPort=127.0.0.1:3012:80
+
+[Service]
+Restart=always
+TimeoutStartSec=30
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,93 @@
+/* flick brand tokens — ported verbatim from the app (flick/web/src/app.css,
+   docs/DESIGN-BRIEF-v0.3.md) so the marketing site and the app share one look.
+   Two axes on <html>: data-mode (light|dark) × data-theme (paper|signal|sage|
+   tide|dusk|noir). ONE accent slot (--accent). Monospace. Square corners.
+   No glow/shadow/scanline on UI chrome — the flick design law. */
+
+:root {
+  /* warm neutrals (paper / sage / dusk) — light */
+  --bg: #f5f2ea;
+  --panel: #ffffff;
+  --ink: #1a1512;
+  --dim: #8c8378;
+  --line: #e7e1d6;
+  --dot: rgba(0, 0, 0, 0.045);
+  --tex: 0;
+  --accent: #d8342b;
+  --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --t-micro: 100ms;
+  --t-std: 200ms;
+  --t-flick: 340ms;
+  /* landing rhythm */
+  --wrap: 1080px;
+  --pad: clamp(20px, 5vw, 40px);
+}
+:root[data-mode='dark'] {
+  --bg: #0c0a08;
+  --panel: #141110;
+  --ink: #f2ede5;
+  --dim: #807769;
+  --line: #241f18;
+  --dot: rgba(255, 255, 255, 0.05);
+  --accent: #f53b30;
+}
+
+/* cool neutrals (signal / tide / noir) */
+:root[data-theme='signal'],
+:root[data-theme='tide'],
+:root[data-theme='noir'] {
+  --bg: #f2f2ef;
+  --panel: #ffffff;
+  --ink: #0c0c0b;
+  --dim: #8b8b87;
+  --line: #e3e3de;
+  --dot: rgba(0, 0, 0, 0.05);
+}
+:root[data-mode='dark'][data-theme='signal'],
+:root[data-mode='dark'][data-theme='tide'],
+:root[data-mode='dark'][data-theme='noir'] {
+  --bg: #070707;
+  --panel: #101010;
+  --ink: #f3f3f1;
+  --dim: #797977;
+  --line: #1e1e1e;
+  --dot: rgba(255, 255, 255, 0.055);
+}
+
+/* accents per theme */
+:root[data-theme='paper'] { --accent: #d8342b; }
+:root[data-mode='dark'][data-theme='paper'] { --accent: #f53b30; }
+:root[data-theme='signal'] { --accent: #e5231b; --tex: 1; }
+:root[data-mode='dark'][data-theme='signal'] { --accent: #ff3b30; }
+:root[data-theme='sage'] { --accent: #3e8a00; }
+:root[data-mode='dark'][data-theme='sage'] { --accent: #7adb2e; }
+:root[data-theme='tide'] { --accent: #0071b8; }
+:root[data-mode='dark'][data-theme='tide'] { --accent: #2dc7ff; }
+:root[data-theme='dusk'] { --accent: #7a3dd4; }
+:root[data-mode='dark'][data-theme='dusk'] { --accent: #a87bff; }
+:root[data-theme='noir'] { --accent: var(--ink); }
+
+/* ---------- base ---------- */
+* { box-sizing: border-box; }
+html { height: 100%; }
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-monospace, 'JetBrains Mono', 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.62;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--t-flick) var(--ease), color var(--t-flick) var(--ease);
+}
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; border-radius: 0; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+.wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding-inline: var(--pad); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}

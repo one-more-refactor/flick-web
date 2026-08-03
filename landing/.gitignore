@@ -1,0 +1,16 @@
+# build output
+dist/
+.astro/
+
+# deps
+node_modules/
+
+# bun — lockfile committed for reproducible prod builds
+
+# env / editor / os
+.env
+.env.*
+.DS_Store
+*.log
+.vscode/
+.idea/

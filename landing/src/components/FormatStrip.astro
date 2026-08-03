@@ -1,0 +1,56 @@
+---
+// A full-bleed conveyor of everything flick ingests — the content IS the
+// feature list. Pure CSS marquee: two identical halves, translateX(-50%),
+// frozen automatically under prefers-reduced-motion by the global media rule.
+const FORMATS = [
+  'paste anything',
+  'PDF',
+  'EPUB',
+  'TXT',
+  'Markdown',
+  'web articles',
+  'Kindle clippings',
+  'cloud links',
+];
+---
+
+<div class="strip" aria-label={`flick reads: ${FORMATS.join(', ')}`}>
+  <div class="track">
+    <div class="half">
+      {FORMATS.map((f) => <span class="item">{f}</span>)}
+    </div>
+    <div class="half" aria-hidden="true">
+      {FORMATS.map((f) => <span class="item">{f}</span>)}
+    </div>
+  </div>
+</div>
+
+<style>
+  .strip {
+    border-top: 1px solid var(--line);
+    padding: 16px 0;
+    overflow: hidden;
+  }
+  .track {
+    display: flex;
+    width: max-content;
+    animation: strip-scroll 30s linear infinite;
+  }
+  .half { display: flex; flex: none; }
+  .item {
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+    white-space: nowrap;
+    padding-right: 1.4em;
+  }
+  .item::after {
+    content: '·';
+    color: var(--accent);
+    padding-left: 1.4em;
+  }
+  @keyframes strip-scroll {
+    to { transform: translateX(-50%); }
+  }
+</style>
