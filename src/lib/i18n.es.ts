@@ -267,6 +267,13 @@ export const ES: Record<string, string> = {
   lp_sh_copy: 'copiar',
   lp_sh_copied: 'copiado',
   lp_foot_science: '¿funciona la lectura rápida?',
+  lp_h1a: 'Lee 2\u20133\u00d7 m\u00e1s r\u00e1pido,',
+  lp_h1b: 'una palabra a la vez.',
+  lp_fmt_paste: 'pega lo que sea',
+  lp_fmt_web: 'art\u00edculos web',
+  lp_fmt_kindle: 'recortes de Kindle',
+  lp_fmt_cloud: 'enlaces en la nube',
+  lp_side_head: '\u00bfya est\u00e1s dentro?',
 
   // drop-anywhere + bulk gate (v0.11)
   drop_to_add: 'suelta para añadir',

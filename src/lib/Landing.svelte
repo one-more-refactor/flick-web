@@ -19,6 +19,9 @@
   import HowBand from './landing/HowBand.svelte';
   import NumbersBand from './landing/NumbersBand.svelte';
   import SelfHostBand from './landing/SelfHostBand.svelte';
+  import FormatStrip from './landing/FormatStrip.svelte';
+  import Auth from './Auth.svelte';
+  import type { User } from './api';
 
   let {
     onStart,
@@ -26,6 +29,7 @@
     onPick,
     onQuickFile,
     onGoto,
+    onAuthed,
     edition = 'selfhost',
     starting = false,
     error = null,
@@ -35,6 +39,7 @@
     onPick: (slug: string) => void;
     onQuickFile: (file: File) => void;
     onGoto: (page: 'science' | 'impressum' | 'datenschutz') => void;
+    onAuthed: (user: User) => void;
     edition?: 'selfhost' | 'hosted';
     starting?: boolean;
     error?: string | null;
@@ -117,10 +122,16 @@
     ondragleave={() => (dragOver = false)}
     ondrop={onDrop}
   >
-    <div class="lp-wrap">
+    <div class="lp-wrap lp-hero-grid">
+      <div class="lp-hero-main">
       <p class="lp-eyebrow">
         <span class="lp-type">read it in a <b>flick</b></span><span class="lp-cur">_</span>
       </p>
+
+      <h1 class="lp-h1 lp-in lp-i1">
+        <span>{t('lp_h1a')}</span>
+        <span>{t('lp_h1b')}</span>
+      </h1>
 
       <HeroReader words={AUTH_DEMO_WORDS} wpm={700} meter />
 
@@ -151,8 +162,16 @@
           <button class="lp-linklike" type="button" onclick={onLogin}>{t('log_in_low')}</button>
         </div>
       </div>
+      </div>
+
+      <aside class="lp-authside lp-in lp-i2">
+        <p class="lp-side-head">{t('lp_side_head')}</p>
+        <Auth embedded {onAuthed} onBack={() => {}} />
+      </aside>
     </div>
   </section>
+
+  <FormatStrip />
 
   <HowBand />
   <NumbersBand />
@@ -674,5 +693,44 @@
   }
   .lp-dot-sep {
     color: var(--line);
+  }
+
+  .lp-h1 {
+    margin: 18px 0 6px;
+    font-size: clamp(26px, 5vw, 40px);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    text-align: center;
+  }
+  .lp-h1 span {
+    display: block;
+  }
+  .lp-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+    align-items: start;
+  }
+  .lp-authside {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 22px 22px 26px;
+  }
+  .lp-side-head {
+    margin: 0 0 14px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  @media (min-width: 1080px) {
+    .lp-hero-grid {
+      grid-template-columns: minmax(0, 1fr) 330px;
+      max-width: 1240px;
+    }
+    .lp-authside {
+      position: sticky;
+      top: 24px;
+    }
   }
 </style>

@@ -10,11 +10,14 @@
     onAuthed,
     onBack,
     guest = false,
+    embedded = false,
   }: {
     onAuthed: (user: User) => void;
     onBack: () => void;
     /** Coming from a guest session — show the merge reassurance. */
     guest?: boolean;
+    /** Rendered inside the landing sidebar — no back link, tight padding. */
+    embedded?: boolean;
   } = $props();
 
   type Step = 'email' | 'password' | 'register' | 'code';
@@ -135,7 +138,7 @@
   }
 </script>
 
-<section class="auth">
+<section class="auth" class:embedded>
   <div class="wrap">
     {#if step === 'email'}
       <p class="head">FLICK<b>_</b></p>
@@ -172,7 +175,9 @@
         </div>
       {/if}
       <div class="navline">
-        <button class="linklike" type="button" onclick={onBack}>← {t('auth_back')}</button>
+        {#if !embedded}
+          <button class="linklike" type="button" onclick={onBack}>← {t('auth_back')}</button>
+        {/if}
       </div>
     {:else if step === 'password'}
       <p class="head"><b>{email}</b></p>

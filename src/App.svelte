@@ -39,6 +39,11 @@
     | { name: 'impressum' }
     | { name: 'datenschutz' };
 
+  // app.* hostnames are the user panel: no marketing landing there — signed-out
+  // visitors get the auth card directly (myflick.app owns the landing).
+  const PANEL_HOST = location.hostname.startsWith('app.');
+  const door = (): View => (PANEL_HOST ? { name: 'auth' } : { name: 'landing' });
+
   let view = $state<View>({ name: 'boot' });
   let user = $state<User | null>(null);
   let edition = $state<'selfhost' | 'hosted'>('selfhost');
@@ -73,7 +78,7 @@
   // Any 401 from a non-auth endpoint means the session is gone — back to the door.
   api.setUnauthorizedHandler(() => {
     user = null;
-    go({ name: 'landing' }, 'replace');
+    go(door(), 'replace');
   });
 
   // ---- top-bar streak chip (v0.5.1): the habit, front and center.
@@ -179,7 +184,7 @@
         // storage unavailable — the visit still works
       }
       nav.replace({ name: 'home' });
-      view = user ? { name: 'library' } : { name: 'landing' };
+      view = user ? { name: 'library' } : door();
       return;
     }
     if (route.name === 'friendland') {
@@ -198,16 +203,16 @@
           // ignore
         }
         nav.replace({ name: 'home' });
-        view = { name: 'landing' };
+        view = door();
       }
       return;
     }
     if (route.name === 'wrapped') {
-      view = user ? { name: 'wrapped' } : { name: 'landing' };
+      view = user ? { name: 'wrapped' } : door();
       return;
     }
     if (!user) {
-      view = { name: 'landing' };
+      view = door();
       return;
     }
     switch (route.name) {
@@ -243,7 +248,7 @@
       user = null;
     }
     await applyRoute(nav.parsePath(location.pathname));
-    if (view.name === 'boot') view = user ? { name: 'library' } : { name: 'landing' };
+    if (view.name === 'boot') view = user ? { name: 'library' } : door();
   }
   boot();
 
@@ -398,7 +403,7 @@
     chip = null;
     themeState.detach();
     i18n.detach();
-    go({ name: 'landing' }, 'replace');
+    go(door(), 'replace');
   }
 
   const LANGS: Lang[] = ['auto', 'en', 'de', 'es'];
@@ -472,7 +477,7 @@
     chip = null;
     themeState.detach();
     i18n.detach();
-    go({ name: 'landing' }, 'replace');
+    go(door(), 'replace');
   }
 
   // closing the account menu resets the delete confirmation
@@ -723,21 +728,22 @@
             {onPick}
             {onQuickFile}
             onGoto={(p) => go({ name: p })}
+            {onAuthed}
             {edition}
             {starting}
             error={quickErr}
           />
         {:else if view.name === 'science'}
-          <Science onBack={() => go(user ? { name: 'library' } : { name: 'landing' })} {onStart} />
+          <Science onBack={() => go(user ? { name: 'library' } : door())} {onStart} />
         {:else if view.name === 'impressum'}
-          <Impressum onBack={() => go(user ? { name: 'library' } : { name: 'landing' })} {onStart} />
+          <Impressum onBack={() => go(user ? { name: 'library' } : door())} {onStart} />
         {:else if view.name === 'datenschutz'}
-          <Datenschutz onBack={() => go(user ? { name: 'library' } : { name: 'landing' })} {onStart} />
+          <Datenschutz onBack={() => go(user ? { name: 'library' } : door())} {onStart} />
         {:else if view.name === 'auth'}
           <Auth
             {onAuthed}
             guest={user?.guest ?? false}
-            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+            onBack={() => go(user ? { name: 'library' } : door())}
           />
         {:else if view.name === 'onboarding' && user}
           <Onboarding {user} onDone={onOnboarded} />
@@ -766,19 +772,19 @@
         {:else if view.name === 'premium'}
           <Premium
             {edition}
-            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+            onBack={() => go(user ? { name: 'library' } : door())}
           />
         {:else if view.name === 'shared'}
           <SharedLanding
             token={view.token}
             onStart={onSharedStart}
             onRead={onSharedRead}
-            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+            onBack={() => go(user ? { name: 'library' } : door())}
           />
         {:else if view.name === 'invite'}
           <Invite
             {user}
-            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
+            onBack={() => go(user ? { name: 'library' } : door())}
             onAuth={() => go({ name: 'auth' })}
           />
         {:else if view.name === 'wrapped'}

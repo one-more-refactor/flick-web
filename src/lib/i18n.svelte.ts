@@ -438,6 +438,13 @@ const DICT: Dict = {
   lp_sh_copy: { en: 'copy', de: 'kopieren' },
   lp_sh_copied: { en: 'copied', de: 'kopiert' },
   lp_foot_science: { en: 'does speed reading work?', de: 'funktioniert Schnelllesen?' },
+  lp_h1a: { en: 'Read 2\u20133\u00d7 faster,', de: 'Lies 2\u20133\u00d7 schneller,' },
+  lp_h1b: { en: 'one word at a time.', de: 'ein Wort nach dem anderen.' },
+  lp_fmt_paste: { en: 'paste anything', de: 'einfach einf\u00fcgen' },
+  lp_fmt_web: { en: 'web articles', de: 'Web-Artikel' },
+  lp_fmt_kindle: { en: 'Kindle clippings', de: 'Kindle-Markierungen' },
+  lp_fmt_cloud: { en: 'cloud links', de: 'Cloud-Links' },
+  lp_side_head: { en: 'already reading?', de: 'schon dabei?' },
 
   // drop-anywhere overlay + indicators (v0.11)
   drop_to_add: { en: 'drop to add', de: 'ablegen zum Hinzufügen' },
