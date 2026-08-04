@@ -1,17 +1,13 @@
 {
   "name": "flick-web",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
-  "workspaces": ["landing"],
   "scripts": {
     "dev": "vite",
-    "dev:landing": "cd landing && bun run dev",
-    "build": "bun run build:landing && bun run build:app",
-    "build:landing": "cd landing && bun run build",
-    "build:app": "vite build",
+    "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json && cd landing && bun run check"
+    "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
     "svelte": "^5.56.8"

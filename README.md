@@ -7,7 +7,7 @@
 
 The web client for [**flick**](https://github.com/one-more-refactor/flick) — Svelte 5 + Vite, built with Bun. A pure client of the [flick API](https://github.com/one-more-refactor/flick-backend); the contract is [`CONTRACTS.md`](https://github.com/one-more-refactor/flick/blob/master/docs/CONTRACTS.md).
 
-Since 1.1 this repo is the **whole front door**: the Astro marketing site (formerly flick-landing) lives in [`landing/`](landing/) and owns the site root, while the SPA is served under `/app/`. The landing keeps its own MIT license — its motion stack (GSAP/Lenis/anime/Vanta) stays a separate static site beside the AGPL app, not part of it.
+Since 1.2 the marketing landing is **native**: the same Svelte app, the same i18n engine (en/de/es), the same design tokens — served at `/` to signed-out visitors, with `/science` and the legal pages as plain routes. The separate Astro site (and the brief `/app/` split) is history; landing motion is Web Animations API only, so the AGPL story stays clean.
 
 ![the reader, playing](docs/media/reader.gif)
 
@@ -25,8 +25,9 @@ No router library — one state machine in `App.svelte`, with URL routing + back
 
 ```mermaid
 stateDiagram-v2
-    [*] --> library : /app/?start=1 (landing CTA mints a guest)
-    [*] --> auth : /app/auth (log in)
+    [*] --> landing
+    landing --> library : Start reading (mints a guest)
+    landing --> auth : log in
     auth --> onboarding : new account
     auth --> library : returning
     onboarding --> library : done / skip
@@ -50,7 +51,7 @@ flowchart LR
 
 ## Design law
 
-Monospace only. Square corners. **One** accent at a time. No gradients, glows, or shadows. Motion is earned (Web Animations API, not a library — the flashy stuff lives in [`landing/`](landing/), which is a separate program with its own rules).
+Monospace only. Square corners. **One** accent at a time. No gradients, glows, or shadows. Motion is earned (Web Animations API, not a library — even on the landing).
 
 ## Develop
 

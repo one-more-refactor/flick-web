@@ -209,9 +209,13 @@ const DICT: Dict = {
 
   // landing
   start_reading: { en: 'Start reading', de: 'Loslesen' },
+  already_here: { en: 'already here?', de: 'schon dabei?' },
+  log_in_low: { en: 'log in', de: 'anmelden' },
+  pick_one_up: { en: 'or pick one up', de: 'oder greif eins auf' },
   min: { en: 'min', de: 'Min' },
 
   // landing quick-read
+  quick_read: { en: 'or drop your own file — start reading it now', de: 'oder leg deine eigene Datei ab — lies sofort los' },
 
   // plans / contribute
   plans_promise: { en: "what's free stays free", de: 'was gratis ist, bleibt gratis' },
@@ -369,6 +373,71 @@ const DICT: Dict = {
   shared_read_go: { en: 'Read now', de: 'Jetzt lesen' },
 
   // v0.8: landing redesign (how-it-works, numbers, spec sheet)
+  lp_how_lead: { en: 'how it works', de: 'so funktioniert’s' },
+  lp_how1_t: { en: 'one word at a time', de: 'ein Wort nach dem anderen' },
+  lp_how1_d: {
+    en: 'No pages, no columns, no lines to track. The text comes to you — one word, always in the same place.',
+    de: 'Keine Seiten, keine Spalten, keine Zeilen. Der Text kommt zu dir — ein Wort, immer an derselben Stelle.',
+  },
+  lp_how2_t: { en: 'the pivot letter', de: 'der Fixpunkt' },
+  lp_how2_d: {
+    en: 'One letter is set in the accent — the optimal recognition point. Every word lands aligned to it, so your eye locks on and never travels.',
+    de: 'Ein Buchstabe steht in der Akzentfarbe — der optimale Erkennungspunkt. Jedes Wort richtet sich daran aus, dein Auge rastet ein und wandert nie.',
+  },
+  lp_how3_t: { en: 'your pace', de: 'dein Tempo' },
+  lp_how3_d: {
+    en: 'Push the speed until the words just barely break apart, then back off a notch. That is your pace — and it climbs with practice.',
+    de: 'Dreh das Tempo hoch, bis die Wörter gerade zu zerfallen beginnen, dann geh einen Tick zurück. Das ist dein Tempo — und es wächst mit Übung.',
+  },
+  lp_num_lead: { en: 'the numbers', de: 'die Zahlen' },
+  lp_num_avg: { en: 'the average reader', de: 'der Durchschnittsleser' },
+  lp_num_demo: { en: 'the demo above', de: 'die Demo oben' },
+  lp_num_saccades: { en: 'your eye stays put', de: 'dein Auge bleibt still' },
+  lp_spec_engine_k: { en: 'engine', de: 'Engine' },
+  lp_spec_engine_v: { en: 'rust + svelte · AGPL open source', de: 'Rust + Svelte · AGPL, quelloffen' },
+  lp_spec_privacy_k: { en: 'privacy', de: 'Privatsphäre' },
+  lp_spec_privacy_v: {
+    en: 'self-hostable — your library stays yours',
+    de: 'selbst hostbar — deine Bibliothek bleibt deine',
+  },
+  lp_spec_formats_k: { en: 'formats', de: 'Formate' },
+  lp_spec_formats_v: { en: 'pdf · epub · txt · md · url · paste', de: 'pdf · epub · txt · md · url · einfügen' },
+  lp_spec_source_k: { en: 'source', de: 'Quellcode' },
+  lp_tag: {
+    en: 'PDFs, EPUBs, articles, your read-later pile — no tracking, and you can host the whole thing yourself.',
+    de: 'PDFs, EPUBs, Artikel, dein Später-lesen-Stapel — ohne Tracking, und du kannst alles selbst hosten.',
+  },
+  lp_sh_label: { en: 'host it yourself', de: 'selbst hosten' },
+  lp_sh_h: { en: 'One binary. One SQLite file. Yours.', de: 'Ein Binary. Eine SQLite-Datei. Deins.' },
+  lp_sh_lede: {
+    en: 'The hosted app is the same code you can run on your own box — no crippled community edition, nothing held back. Self-hosted flick has every feature, forever.',
+    de: 'Die gehostete App ist derselbe Code, den du auf deiner eigenen Maschine betreiben kannst — keine beschnittene Community-Edition, nichts zurückgehalten. Selbst gehostet hat flick jedes Feature, für immer.',
+  },
+  lp_sh_cmd_note: {
+    en: 'Docker or Podman Compose, a named volume for your library, re-run to upgrade. Or build the binary yourself and drop it behind your reverse proxy.',
+    de: 'Docker oder Podman Compose, ein benanntes Volume für deine Bibliothek, zum Upgraden einfach erneut ausführen. Oder das Binary selbst bauen und hinter deinen Reverse Proxy legen.',
+  },
+  lp_sh_f1: {
+    en: 'no CLA — inbound equals outbound, it can never be closed',
+    de: 'kein CLA — inbound gleich outbound, es kann nie geschlossen werden',
+  },
+  lp_sh_f2: {
+    en: 'external services: no Redis, no Postgres, no CDN, no telemetry',
+    de: 'externe Dienste: kein Redis, kein Postgres, kein CDN, keine Telemetrie',
+  },
+  lp_sh_f3: {
+    en: 'bring your own identity provider — Authentik-tested',
+    de: 'bring deinen eigenen Identity-Provider mit — Authentik-getestet',
+  },
+  lp_sh_f4: { en: 'terminal client, same engine, same library', de: 'Terminal-Client, gleiche Engine, gleiche Bibliothek' },
+  lp_sh_pile: {
+    en: "Already running Wallabag, Readeck, Karakeep or Calibre? You've solved storing the pile. flick is the part that reads it to you.",
+    de: 'Du betreibst schon Wallabag, Readeck, Karakeep oder Calibre? Dann ist das Stapeln gelöst. flick ist der Teil, der ihn dir vorliest.',
+  },
+  lp_sh_docs: { en: 'read the docs', de: 'zur Doku' },
+  lp_sh_copy: { en: 'copy', de: 'kopieren' },
+  lp_sh_copied: { en: 'copied', de: 'kopiert' },
+  lp_foot_science: { en: 'does speed reading work?', de: 'funktioniert Schnelllesen?' },
 
   // drop-anywhere overlay + indicators (v0.11)
   drop_to_add: { en: 'drop to add', de: 'ablegen zum Hinzufügen' },

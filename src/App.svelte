@@ -6,6 +6,10 @@
   import { themeState, THEME_NAMES, THEME_SWATCH } from './lib/theme.svelte';
   import { i18n, t } from './lib/i18n.svelte';
   import * as nav from './lib/nav';
+  import Landing from './lib/Landing.svelte';
+  import Science from './lib/Science.svelte';
+  import Impressum from './lib/Impressum.svelte';
+  import Datenschutz from './lib/Datenschutz.svelte';
   import Auth from './lib/Auth.svelte';
   import Onboarding from './lib/Onboarding.svelte';
   import Library from './lib/Library.svelte';
@@ -21,6 +25,7 @@
 
   type View =
     | { name: 'boot' }
+    | { name: 'landing' }
     | { name: 'auth' }
     | { name: 'onboarding' }
     | { name: 'library' }
@@ -29,7 +34,10 @@
     | { name: 'premium' }
     | { name: 'shared'; token: string }
     | { name: 'invite' }
-    | { name: 'wrapped' };
+    | { name: 'wrapped' }
+    | { name: 'science' }
+    | { name: 'impressum' }
+    | { name: 'datenschutz' };
 
   let view = $state<View>({ name: 'boot' });
   let user = $state<User | null>(null);
@@ -62,16 +70,10 @@
     bannerGone = true;
   }
 
-  /** The front door is the static landing at the site root now (landing/,
-   *  Astro). Leaving the SPA is a real navigation, not a view change. */
-  function toLanding() {
-    location.replace('/');
-  }
-
   // Any 401 from a non-auth endpoint means the session is gone — back to the door.
   api.setUnauthorizedHandler(() => {
     user = null;
-    toLanding();
+    go({ name: 'landing' }, 'replace');
   });
 
   // ---- top-bar streak chip (v0.5.1): the habit, front and center.
@@ -129,6 +131,12 @@
         return { name: 'invite' };
       case 'wrapped':
         return { name: 'wrapped' };
+      case 'science':
+        return { name: 'science' };
+      case 'impressum':
+        return { name: 'impressum' };
+      case 'datenschutz':
+        return { name: 'datenschutz' };
       default:
         return { name: 'home' };
     }
@@ -159,20 +167,19 @@
       view = { name: 'invite' };
       return;
     }
+    if (route.name === 'science' || route.name === 'impressum' || route.name === 'datenschutz') {
+      view = { name: route.name };
+      return;
+    }
     if (route.name === 'refland') {
-      // /r/:code — remember the referrer, then act like the front door. The
-      // stored code applies when the landing CTA mints the guest.
+      // /r/:code — remember the referrer, then act like the front door.
       try {
         localStorage.setItem('flick.ref', route.code);
       } catch {
         // storage unavailable — the visit still works
       }
-      if (user) {
-        nav.replace({ name: 'home' });
-        view = { name: 'library' };
-      } else {
-        toLanding();
-      }
+      nav.replace({ name: 'home' });
+      view = user ? { name: 'library' } : { name: 'landing' };
       return;
     }
     if (route.name === 'friendland') {
@@ -190,17 +197,17 @@
         } catch {
           // ignore
         }
-        toLanding();
+        nav.replace({ name: 'home' });
+        view = { name: 'landing' };
       }
       return;
     }
     if (route.name === 'wrapped') {
-      if (user) view = { name: 'wrapped' };
-      else toLanding();
+      view = user ? { name: 'wrapped' } : { name: 'landing' };
       return;
     }
     if (!user) {
-      toLanding();
+      view = { name: 'landing' };
       return;
     }
     switch (route.name) {
@@ -235,23 +242,8 @@
     } catch {
       user = null;
     }
-    // ?start=1 — the landing's guest-first CTA: mint a guest, straight to the
-    // library. Returning users (live session) skip the mint and land there too.
-    if (!user && new URLSearchParams(location.search).has('start')) {
-      history.replaceState({}, '', nav.pathFor({ name: 'home' }));
-      const u = await startGuest();
-      if (u) {
-        view = { name: 'library' };
-        return;
-      }
-      toLanding();
-      return;
-    }
     await applyRoute(nav.parsePath(location.pathname));
-    if (view.name === 'boot') {
-      if (user) view = { name: 'library' };
-      else toLanding();
-    }
+    if (view.name === 'boot') view = user ? { name: 'library' } : { name: 'landing' };
   }
   boot();
 
@@ -272,6 +264,50 @@
       return null;
     } finally {
       starting = false;
+    }
+  }
+
+  async function onStart() {
+    const u = await startGuest();
+    if (u) go({ name: 'library' });
+  }
+
+  /** Landing catalog pick: session (guest if needed) → open the pre-seeded
+   *  copy (409 carries its id, contract v0.4.1) or add-then-open. */
+  async function onPick(slug: string) {
+    const u = await startGuest();
+    if (!u) return;
+    try {
+      const added = await api.catalogAdd(slug);
+      const [fresh, tl] = await Promise.all([api.book(added.id), api.timeline(added.id)]);
+      onRead(fresh, tl);
+    } catch (err) {
+      if (err instanceof api.ApiError && err.status === 409 && err.bookId) {
+        try {
+          const [fresh, tl] = await Promise.all([api.book(err.bookId), api.timeline(err.bookId)]);
+          onRead(fresh, tl);
+          return;
+        } catch {
+          // fall through to the library
+        }
+      }
+      go({ name: 'library' });
+    }
+  }
+
+  /** Landing quick-read: drop a file → guest → import → reader, one gesture. */
+  let quickErr = $state<string | null>(null);
+  async function onQuickFile(file: File) {
+    quickErr = null;
+    const u = await startGuest();
+    if (!u) return;
+    try {
+      const book = await api.createBookFromFile(file);
+      const tl = await api.timeline(book.id);
+      onRead(book, tl);
+    } catch (err) {
+      quickErr = err instanceof Error ? err.message : t('err_generic');
+      go({ name: 'library' });
     }
   }
 
@@ -362,7 +398,7 @@
     chip = null;
     themeState.detach();
     i18n.detach();
-    toLanding();
+    go({ name: 'landing' }, 'replace');
   }
 
   const LANGS: Lang[] = ['auto', 'en', 'de', 'es'];
@@ -436,7 +472,7 @@
     chip = null;
     themeState.detach();
     i18n.detach();
-    toLanding();
+    go({ name: 'landing' }, 'replace');
   }
 
   // closing the account menu resets the delete confirmation
@@ -680,11 +716,28 @@
           <div class="wrap" style="padding-top: 40px">
             <div class="status">connecting<span class="cur">_</span></div>
           </div>
+        {:else if view.name === 'landing'}
+          <Landing
+            {onStart}
+            onLogin={() => go({ name: 'auth' })}
+            {onPick}
+            {onQuickFile}
+            onGoto={(p) => go({ name: p })}
+            {edition}
+            {starting}
+            error={quickErr}
+          />
+        {:else if view.name === 'science'}
+          <Science onBack={() => go(user ? { name: 'library' } : { name: 'landing' })} {onStart} />
+        {:else if view.name === 'impressum'}
+          <Impressum onBack={() => go(user ? { name: 'library' } : { name: 'landing' })} {onStart} />
+        {:else if view.name === 'datenschutz'}
+          <Datenschutz onBack={() => go(user ? { name: 'library' } : { name: 'landing' })} {onStart} />
         {:else if view.name === 'auth'}
           <Auth
             {onAuthed}
             guest={user?.guest ?? false}
-            onBack={() => (user ? go({ name: 'library' }) : toLanding())}
+            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
           />
         {:else if view.name === 'onboarding' && user}
           <Onboarding {user} onDone={onOnboarded} />
@@ -713,19 +766,19 @@
         {:else if view.name === 'premium'}
           <Premium
             {edition}
-            onBack={() => (user ? go({ name: 'library' }) : toLanding())}
+            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
           />
         {:else if view.name === 'shared'}
           <SharedLanding
             token={view.token}
             onStart={onSharedStart}
             onRead={onSharedRead}
-            onBack={() => (user ? go({ name: 'library' }) : toLanding())}
+            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
           />
         {:else if view.name === 'invite'}
           <Invite
             {user}
-            onBack={() => (user ? go({ name: 'library' }) : toLanding())}
+            onBack={() => go(user ? { name: 'library' } : { name: 'landing' })}
             onAuth={() => go({ name: 'auth' })}
           />
         {:else if view.name === 'wrapped'}

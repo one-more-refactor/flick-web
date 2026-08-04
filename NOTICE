@@ -11,7 +11,3 @@ language and annotated with quantized Zipf scores.
 
 Public-domain catalog texts (server/assets/catalog/) are sourced from
 Project Gutenberg and are in the public domain.
-
-The landing/ directory is the flick marketing site (formerly the separate
-flick-landing repository) and is licensed MIT — see landing/LICENSE. It is a
-separate static site aggregated in this repository, not part of the AGPL app.

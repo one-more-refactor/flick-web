@@ -2,12 +2,8 @@
 // button). The state machine in App.svelte stays the source of truth; this
 // module only translates view ⇄ path and owns pushState/popstate.
 
-/** The SPA lives under /app/ — the site root belongs to the static landing
- *  (landing/, Astro). Kept in sync with `base` in vite.config.ts. */
-export const BASE = '/app';
-
 export type Route =
-  | { name: 'home' } // library (authed); logged out, the static landing takes over
+  | { name: 'home' } // landing (logged out) or library (authed)
   | { name: 'read'; id: string }
   | { name: 'stats' }
   | { name: 'auth' }
@@ -16,10 +12,14 @@ export type Route =
   | { name: 'invite' }
   | { name: 'wrapped' }
   | { name: 'refland'; code: string }
-  | { name: 'friendland'; code: string };
+  | { name: 'friendland'; code: string }
+  | { name: 'science' }
+  | { name: 'impressum' }
+  | { name: 'datenschutz' };
 
 export function parsePath(pathname: string): Route {
-  if (pathname.startsWith(BASE)) pathname = pathname.slice(BASE.length) || '/';
+  // The retired static site emitted directory URLs (/science/) — tolerate them.
+  if (pathname.length > 1 && pathname.endsWith('/')) pathname = pathname.slice(0, -1);
   const read = pathname.match(/^\/read\/([A-Za-z0-9]+)$/);
   if (read) return { name: 'read', id: read[1] };
   if (pathname === '/stats') return { name: 'stats' };
@@ -28,6 +28,9 @@ export function parsePath(pathname: string): Route {
   const shared = pathname.match(/^\/s\/([A-Za-z0-9]+)$/);
   if (shared) return { name: 'shared', token: shared[1] };
   if (pathname === '/invite') return { name: 'invite' };
+  if (pathname === '/science') return { name: 'science' };
+  if (pathname === '/impressum') return { name: 'impressum' };
+  if (pathname === '/datenschutz') return { name: 'datenschutz' };
   if (pathname === '/wrapped') return { name: 'wrapped' };
   const ref = pathname.match(/^\/r\/([A-Za-z0-9]+)$/);
   if (ref) return { name: 'refland', code: ref[1] };
@@ -37,10 +40,6 @@ export function parsePath(pathname: string): Route {
 }
 
 export function pathFor(route: Route): string {
-  return BASE + relPath(route);
-}
-
-function relPath(route: Route): string {
   switch (route.name) {
     case 'read':
       return `/read/${route.id}`;
@@ -54,6 +53,12 @@ function relPath(route: Route): string {
       return `/s/${route.token}`;
     case 'invite':
       return '/invite';
+    case 'science':
+      return '/science';
+    case 'impressum':
+      return '/impressum';
+    case 'datenschutz':
+      return '/datenschutz';
     case 'wrapped':
       return '/wrapped';
     case 'refland':
