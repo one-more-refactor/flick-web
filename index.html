@@ -12,15 +12,125 @@
     <title>flick — read it in a flick</title>
     <meta
       name="description"
-      content="flick — open-source speed reading. One word at a time, anchored at the optimal recognition point. Paste, drop or import anything and read it at your pace."
+      content="Open-source speed reading. One word at a time, anchored on the pivot letter your eye locks onto. Import PDFs, EPUBs, articles and Kindle clippings — read as a guest with no account, or self-host it in one command."
     />
+    <!-- lib/seo.ts rewrites title, description, canonical and robots per route;
+         these are the values a crawler sees before any script runs. -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="author" content="one more refactor" />
+    <link rel="canonical" href="https://myflick.app/" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <meta property="og:site_name" content="flick" />
     <meta property="og:title" content="flick — read it in a flick" />
     <meta
       property="og:description"
       content="Open-source speed reading. Paste, drop or import anything — read it one word at a time."
     />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://myflick.app/" />
     <meta property="og:image" content="/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Written for machines: a plain-language summary, a markdown rendering of
+         this page for anything sending `Accept: text/markdown`, and the full
+         agent surface (OpenAPI, MCP, skills) behind the API catalog. -->
+    <link rel="alternate" type="text/plain" title="llms.txt" href="/llms.txt" />
+    <link rel="license" href="https://www.gnu.org/licenses/agpl-3.0.html" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://myflick.app/#website",
+            "url": "https://myflick.app/",
+            "name": "flick",
+            "description": "Open-source, self-hostable RSVP speed reading.",
+            "inLanguage": ["en", "de", "es"],
+            "publisher": { "@id": "https://myflick.app/#publisher" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://myflick.app/#publisher",
+            "name": "one more refactor",
+            "url": "https://myflick.app/",
+            "sameAs": ["https://github.com/one-more-refactor"]
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://myflick.app/#app",
+            "name": "flick",
+            "alternateName": "flick speed reader",
+            "url": "https://myflick.app/",
+            "applicationCategory": "ProductivityApplication",
+            "applicationSubCategory": "Speed reading",
+            "operatingSystem": "Any modern web browser",
+            "browserRequirements": "Requires JavaScript",
+            "description": "RSVP speed reader: one word at a time, each anchored on its optimal recognition point, with per-word timing so rare words linger and common ones fly. Imports PDF, EPUB, txt, Markdown, Kindle clippings and web articles. Guest-first — no account needed.",
+            "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+            "isAccessibleForFree": true,
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "EUR",
+              "description": "Free to use and free to self-host. An optional Pro plan funds the project; what is free stays free."
+            },
+            "featureList": [
+              "RSVP reading with optimal-recognition-point alignment",
+              "Research-grounded per-word pacing",
+              "PDF, EPUB, txt, Markdown and Kindle clippings import",
+              "Web article import with readability extraction",
+              "Full-text search across your library",
+              "Reading streaks, daily goal and statistics",
+              "Self-hostable in one command",
+              "GDPR export and deletion built in"
+            ],
+            "publisher": { "@id": "https://myflick.app/#publisher" },
+            "softwareHelp": { "@id": "https://myflick.app/science" }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://myflick.app/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Does speed reading actually work?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Partly. RSVP removes eye-movement overhead — the saccades and the return sweep at the end of each line — and that is worth roughly 400–500 wpm of comfortable reading against a ~238 wpm adult baseline. It does not make you comprehend faster: comprehension degrades as the presentation rate climbs, and RSVP removes the backwards eye movements readers use to repair a misparse. Anyone claiming 1000+ wpm with full comprehension is describing skimming."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What speed should I read at?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "600–800 wpm for familiar prose and news, 400–500 for general reading and most non-fiction, 250–350 with a planned second pass for technical material. Do not use RSVP for poetry, contracts or code — those need rereading, which is exactly what the format takes away."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Do I need an account to use flick?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. flick is guest-first: the first visit mints an anonymous session and your library and reading position persist. If you sign up later, everything you read as a guest merges into the new account."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I self-host flick?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, and everything is free in the self-hosted edition. One container over one SQLite file, no external services: curl -fsSL https://myflick.app/install.sh | sh. flick is licensed AGPL-3.0."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
     <script>
       // stamp mode/theme before first paint so there is no flash; the theme
       // module (theme.svelte.ts) takes over from here and keeps these keys.

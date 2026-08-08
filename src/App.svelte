@@ -6,6 +6,9 @@
   import { themeState, THEME_NAMES, THEME_SWATCH } from './lib/theme.svelte';
   import { i18n, t } from './lib/i18n.svelte';
   import * as nav from './lib/nav';
+  import { applySeo, type SeoView } from './lib/seo';
+  import { queueSettings } from './lib/settings';
+  import { provideWebMcpTools } from './lib/webmcp';
   import Landing from './lib/Landing.svelte';
   import Science from './lib/Science.svelte';
   import Impressum from './lib/Impressum.svelte';
@@ -393,6 +396,25 @@
     if (user) user.settings.wpm = wpm;
   }
 
+  // ---- WebMCP: let a browser-side agent drive the reader (lib/webmcp.ts).
+  // Re-published whenever sign-in state changes, so the tools' own guards
+  // always reflect the session this tab actually has.
+  $effect(() => {
+    const signedIn = user !== null;
+    provideWebMcpTools({
+      signedIn: () => signedIn,
+      currentWpm: () => user?.settings.wpm ?? 350,
+      setWpm: (wpm) => {
+        onWpm(wpm);
+        queueSettings({ wpm });
+      },
+      openBook: async (id) => {
+        const [book, timeline] = await Promise.all([api.book(id), api.timeline(id)]);
+        onRead(book, timeline);
+      },
+    });
+  });
+
   async function onLogout() {
     try {
       await api.logout();
@@ -426,26 +448,35 @@
       view.name !== 'boot',
   );
 
-  // ---- per-route document titles (v0.5.1 brand polish) ----
+  // ---- per-route document metadata (titles since v0.5.1; description,
+  // canonical and robots since 1.4 — see lib/seo.ts for why each matters)
   $effect(() => {
-    document.title =
+    const title =
       view.name === 'reader'
         ? `${view.book.title} — flick`
         : view.name === 'stats'
           ? 'stats — flick'
-          : view.name === 'premium'
-            ? edition === 'hosted'
-              ? 'premium — flick'
-              : 'contribute — flick'
-            : view.name === 'auth'
-              ? 'sign in — flick'
-              : view.name === 'shared'
-                ? 'shared — flick'
-                : view.name === 'invite'
-                  ? 'invite — flick'
-                  : view.name === 'wrapped'
-                    ? 'wrapped — flick'
-                    : 'flick — read it in a flick';
+          : view.name === 'auth'
+            ? 'sign in — flick'
+            : view.name === 'shared'
+              ? 'shared — flick'
+              : view.name === 'invite'
+                ? 'invite — flick'
+                : view.name === 'wrapped'
+                  ? 'wrapped — flick'
+                  : undefined;
+
+    const page: SeoView =
+      view.name === 'science' ||
+      view.name === 'impressum' ||
+      view.name === 'datenschutz' ||
+      view.name === 'premium'
+        ? view.name
+        : view.name === 'landing' || view.name === 'boot'
+          ? 'landing'
+          : 'private';
+
+    applySeo(page, { title, contribute: edition !== 'hosted' });
   });
 
   // ---- flip cube: a quarter-turn forward per flick; the visible face always

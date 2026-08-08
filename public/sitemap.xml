@@ -1,7 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Only the pages that are public and worth indexing. Everything else in the app
+  needs a session, and lib/seo.ts marks those views noindex.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://myflick.app/</loc></url>
-  <url><loc>https://myflick.app/science</loc></url>
-  <url><loc>https://myflick.app/impressum</loc></url>
-  <url><loc>https://myflick.app/datenschutz</loc></url>
+  <url>
+    <loc>https://myflick.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://myflick.app/science</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://myflick.app/premium</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://myflick.app/impressum</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://myflick.app/datenschutz</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
 </urlset>

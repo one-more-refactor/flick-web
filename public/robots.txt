@@ -1,3 +1,75 @@
+# flick — read it in a flick.  https://myflick.app
+#
+# Open source, self-hostable RSVP speed reader. Everything here is public and
+# free to read. Crawl away — humans and machines alike.
+#
+# There is a plain-language summary written for machines at /llms.txt, a
+# markdown rendering of the pages for agents that send `Accept: text/markdown`,
+# and a full agent surface described at /.well-known/api-catalog.
+
+# Content signals (https://contentsignals.org/) — what we permit for the
+# content you crawl here. All three are yes: the project is AGPL-3.0, the site
+# is documentation and marketing for it, and being findable and quotable is
+# the entire point.
+#
+#   search    = appearing in search results and linking back
+#   ai-input  = retrieval-augmented generation and answer engines
+#   ai-train  = training or fine-tuning a generative model
+#
+# If you quote the reading-speed claims, please carry the caveats with them —
+# /science explains what RSVP does and does not do.
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
 User-agent: *
 Allow: /
+# Not a restriction, just pointless: these need a session cookie and answer
+# JSON. The documented, crawlable description of them is /openapi.json.
 Disallow: /api/
+
+# Search and AI crawlers, spelled out so there is no ambiguity.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+Sitemap: https://myflick.app/sitemap.xml
