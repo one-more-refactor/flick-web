@@ -181,7 +181,7 @@
     {/if}
 
     {#if error}
-      <div class="form-error" style="margin-top: 14px">{error}</div>
+      <div class="form-error" role="alert" style="margin-top: 14px">{error}</div>
     {/if}
 
     <div class="obnav">

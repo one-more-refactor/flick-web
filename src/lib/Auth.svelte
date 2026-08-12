@@ -159,7 +159,7 @@
             use:autofocus
           />
         </div>
-        {#if error}<div class="form-error">{error}</div>{/if}
+        {#if error}<div class="form-error" role="alert">{error}</div>{/if}
         <button class="btn" type="submit" disabled={busy}>
           {busy ? `${t('working')}…` : `${t('auth_continue')} →`}
         </button>
@@ -193,7 +193,7 @@
             use:autofocus
           />
         </div>
-        {#if error}<div class="form-error">{error}</div>{/if}
+        {#if error}<div class="form-error" role="alert">{error}</div>{/if}
         <button class="btn" type="submit" disabled={busy}>
           {busy ? `${t('working')}…` : `${t('auth_signin')} →`}
         </button>
@@ -234,7 +234,7 @@
           <label for="reg-name">{t('auth_name_opt')}</label>
           <input id="reg-name" type="text" bind:value={name} autocomplete="name" />
         </div>
-        {#if error}<div class="form-error">{error}</div>{/if}
+        {#if error}<div class="form-error" role="alert">{error}</div>{/if}
         <button class="btn" type="submit" disabled={busy}>
           {busy ? `${t('working')}…` : `${t('auth_create')} →`}
         </button>
@@ -274,7 +274,7 @@
               use:autofocus
             />
           </div>
-          {#if error}<div class="form-error">{error}</div>{/if}
+          {#if error}<div class="form-error" role="alert">{error}</div>{/if}
           <button class="btn" type="submit" disabled={busy || code.trim().length !== 6}>
             {busy ? `${t('working')}…` : `${t('auth_code_verify')} →`}
           </button>
