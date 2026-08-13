@@ -1,0 +1,183 @@
+---
+// The product explained by its own trick. Left: the three ideas, a real
+// sequence. Right: a column of words that scroll-scrubs from ordinary
+// left-aligned text into ORP alignment — every pivot letter landing on one
+// accent hairline. Below: the anchor demo running live at a readable pace.
+import HeroReader from './HeroReader.astro';
+import { ANCHOR_DEMO_WORDS } from '../lib/demos';
+
+// [word, orpIndex] — classic ORP rule (len 1 → 0, 2–5 → 1, 6–9 → 2, 10+ → 3),
+// the same mapping the engine timelines in demos.ts follow.
+const COLUMN: [string, number][] = [
+  ['a', 0],
+  ['thousand', 2],
+  ['words', 1],
+  ['land', 1],
+  ['on', 1],
+  ['a', 0],
+  ['single', 2],
+  ['point', 1],
+  ['of', 1],
+  ['comprehension.', 3],
+];
+const maxOrp = Math.max(...COLUMN.map(([, o]) => o));
+---
+
+<section id="how" class="how section">
+  <div class="how-pin">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <p class="sec-label">How it works</p>
+        <h2 class="sec-h2">Your eye stays still.<br />The text moves instead.</h2>
+      </div>
+
+      <div class="grid">
+        <ol class="steps">
+          <li class="step">
+            <span class="n">01</span>
+            <h3>One word at a time</h3>
+            <p>
+              Instead of lines to scan, flick deals your text out word by word in one fixed
+              spot. No skimming ahead, no losing your place, no re-reading the same sentence
+              three times.
+            </p>
+          </li>
+          <li class="step">
+            <span class="n">02</span>
+            <h3>Anchored on the pivot letter</h3>
+            <p>
+              Every word lands with its optimal recognition point — the pivot letter, in the
+              accent color — on the same vertical line. Your eye locks onto it and simply never
+              has to move again.
+            </p>
+          </li>
+          <li class="step">
+            <span class="n">03</span>
+            <h3>Push the pace</h3>
+            <p>
+              Raise the speed until words just start to break apart, then back off a notch.
+              That's your pace — and it climbs with practice. Most readers settle 2–3× above
+              where they started.
+            </p>
+          </li>
+        </ol>
+
+        <div class="visual">
+          <div class="orp-col" data-orp style={`--pivot:${maxOrp}`}>
+            <div class="orp-line" aria-hidden="true"></div>
+            {COLUMN.map(([word, orp]) => (
+              <div class="orp-row" style={`--pad:${maxOrp - orp}`}>
+                <span class="pre">{word.slice(0, orp)}</span><span class="pv">{word.charAt(orp)}</span><span class="post">{word.slice(orp + 1)}</span>
+              </div>
+            ))}
+          </div>
+          <p class="cap">every pivot letter, one vertical line</p>
+        </div>
+      </div>
+
+      <div class="how-demo">
+        <HeroReader words={ANCHOR_DEMO_WORDS} wpm={380} meter />
+        <p class="cap demo-cap">the anchor demo — live, at 380 wpm</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .how-pin { padding-bottom: 8px; }
+  .sec-head { margin-bottom: clamp(36px, 6vh, 60px); }
+
+  /* while pinned (same breakpoint the motion controller uses), fill the
+     viewport below the nav and center the scene in it */
+  @media (min-width: 920px) and (min-height: 720px) {
+    .how-pin {
+      min-height: calc(100svh - 64px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .how-pin .wrap { width: 100%; }
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(22px, 3.5vh, 34px);
+  }
+  .step { display: grid; grid-template-columns: 34px 1fr; gap: 0 14px; }
+  .step .n {
+    color: var(--accent);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    padding-top: 3px;
+  }
+  .step h3 {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .step p {
+    grid-column: 2;
+    margin: 0;
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.7;
+    max-width: 46ch;
+  }
+
+  .visual { justify-self: center; }
+  .orp-col {
+    position: relative;
+    font-size: clamp(19px, 2.4vw, 27px);
+    font-weight: 700;
+    line-height: 1.75;
+    white-space: pre;
+    width: max-content;
+  }
+  .orp-line {
+    position: absolute;
+    top: -10px;
+    bottom: -10px;
+    left: calc((var(--pivot) + 0.5) * 1ch);
+    width: 1px;
+    background: var(--accent);
+    transform-origin: top center;
+  }
+  .orp-row { padding-left: calc(var(--pad) * 1ch); }
+  .orp-row .pv { color: var(--accent); }
+
+  .cap {
+    margin: 18px 0 0;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-align: center;
+  }
+
+  .how-demo {
+    max-width: 560px;
+    margin: clamp(40px, 7vh, 72px) auto 0;
+  }
+  .demo-cap { margin-top: 14px; }
+
+  @media (max-width: 919px) {
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .visual { justify-self: start; padding-left: 4px; }
+    .cap { text-align: left; }
+    .how-demo .demo-cap { text-align: center; }
+  }
+</style>

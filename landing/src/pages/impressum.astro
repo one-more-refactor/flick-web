@@ -1,0 +1,80 @@
+---
+// Was the Impressum (§ 5 DDG). Taken down by the operator's decision while
+// myflick.app runs as a non-commercial public instance with no payments.
+//
+// The route is kept (rather than 404'd) so existing links, the sitemap and the
+// footer still resolve, and so restoring the Anbieterkennzeichnung is a single
+// edit when Pro starts taking money — at which point it is required again, and
+// arguably already is: "geschäftsmäßig" under § 5 DDG does not mean profitable.
+import LegalDoc from '../layouts/LegalDoc.astro';
+---
+
+<LegalDoc
+  title="Über diese Instanz — flick"
+  description="myflick.app ist derzeit eine öffentliche, nicht-kommerzielle Instanz von flick — keine Zahlungen, kein Angebot gegen Entgelt."
+  heading="Über diese Instanz"
+  updated="29. Juli 2026"
+>
+  <p class="quiet">
+    About this instance — myflick.app is a public, non-commercial instance of
+    flick. English summary below the German text.
+  </p>
+
+  <h2>Nicht-kommerzieller Betrieb</h2>
+  <p>
+    <strong>myflick.app</strong> (einschließlich <strong>app.myflick.app</strong>)
+    ist derzeit eine öffentlich zugängliche, <strong>nicht-kommerzielle</strong>
+    Instanz der freien Software flick. Es werden <strong>keine Zahlungen
+    entgegengenommen</strong>, keine Leistungen gegen Entgelt angeboten und keine
+    Werbung geschaltet. Der Betrieb erfolgt als privates Projekt.
+  </p>
+  <p>
+    Sobald hier ein kostenpflichtiges Angebot startet, wird an dieser Stelle
+    eine vollständige Anbieterkennzeichnung gemäß § 5 DDG veröffentlicht.
+  </p>
+
+  <h2>Kontakt</h2>
+  <p>
+    Fragen, Hinweise auf Rechtsverletzungen oder Anliegen zum Datenschutz:
+    <span class="fill">[kontakt@myflick.app]</span>. Anfragen werden zeitnah
+    beantwortet.
+  </p>
+
+  <h2>Die Software</h2>
+  <p>
+    flick ist freie Software unter der <strong>AGPL-3.0</strong>. Der vollständige
+    Quelltext dieser Instanz ist öffentlich einsehbar unter
+    <a href="https://github.com/one-more-refactor/flick">github.com/one-more-refactor/flick</a>.
+    Von Dritten selbst gehostete Instanzen werden von deren Betreibern in
+    eigener Verantwortung betrieben; diese Seite gilt ausschließlich für die
+    hier erreichbare Instanz.
+  </p>
+
+  <h2>Datenschutz</h2>
+  <p>
+    Wie mit Ihren Daten umgegangen wird, steht in der
+    <a href="/datenschutz/">Datenschutzerklärung</a> — kurz: keine Werbung,
+    keine Tracker, keine Analysedienste, Export und Löschung jederzeit möglich.
+  </p>
+
+  <h2>Haftung für Links</h2>
+  <p>
+    Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte
+    wir keinen Einfluss haben. Für diese fremden Inhalte ist stets der
+    jeweilige Anbieter verantwortlich. Zum Zeitpunkt der Verlinkung waren
+    keine Rechtsverstöße erkennbar; bei Bekanntwerden von Rechtsverletzungen
+    entfernen wir derartige Links umgehend.
+  </p>
+
+  <h2>In English</h2>
+  <p>
+    myflick.app is a public, non-commercial instance of flick, run as a
+    personal project. No payments are taken, nothing is sold and no advertising
+    is served. flick itself is free software under the AGPL-3.0 — the complete
+    source of this instance is on
+    <a href="https://github.com/one-more-refactor/flick">GitHub</a>. Instances
+    hosted by other people are operated, and answered for, by whoever runs them.
+    A full German provider identification (Impressum) will be published here
+    before any paid offering starts.
+  </p>
+</LegalDoc>

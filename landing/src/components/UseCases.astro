@@ -1,0 +1,202 @@
+---
+// Six places flick earns its keep. Each card is tagged with the import type
+// it leans on and carries its own small mono vignette — a page skeleton, a
+// counting-down tab pile, chapter ticks, time bars, revision passes, and a
+// live pocket reader in a phone frame.
+import HeroReader from './HeroReader.astro';
+import { COMMUTE_DEMO_WORDS } from '../lib/demos';
+---
+
+<section id="uses" class="uses section">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <p class="sec-label">Use cases</p>
+      <h2 class="sec-h2">Where the minutes come back.</h2>
+      <p class="sec-lede">
+        flick reads whatever you feed it — paste, PDF, EPUB, TXT, Markdown, a URL, Kindle
+        clippings, a cloud link. Storing the pile is the part you've probably already solved;
+        this is the part where you get through it.
+      </p>
+    </div>
+
+    <div class="grid">
+      <article class="uc" data-reveal>
+        <p class="uc-tag">[PDF]</p>
+        <h3>Papers before the meeting</h3>
+        <p class="uc-p">
+          Drop the PDF in, take the abstract at full tilt, drop to half speed for the method
+          section. You walk in having actually read it.
+        </p>
+        <div class="viz viz-page" aria-hidden="true">
+          <i></i><i></i><i class="hot"></i><i></i><i class="short"></i>
+        </div>
+      </article>
+
+      <article class="uc" data-reveal data-reveal-delay="0.07">
+        <p class="uc-tag">[URL]</p>
+        <h3>The read-later pile</h3>
+        <p class="uc-p">
+          Forty open tabs, three newsletters, one guilty folder. Paste a link, flick through
+          it, close the tab for good.
+        </p>
+        <div class="viz viz-pile" aria-hidden="true">
+          <b data-count="0" data-count-from="47">0</b>
+          <span>tabs left</span>
+        </div>
+      </article>
+
+      <article class="uc" data-reveal data-reveal-delay="0.14">
+        <p class="uc-tag">[EPUB]</p>
+        <h3>Books, finally finished</h3>
+        <p class="uc-p">
+          A steady 450 wpm turns a 90,000-word novel into a week of lunch breaks. Your place
+          carries across every device.
+        </p>
+        <div class="viz viz-ch" aria-hidden="true">
+          <span class="ticks">
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i>
+          </span>
+          <span class="lab">ch 9/14</span>
+        </div>
+      </article>
+
+      <article class="uc" data-reveal>
+        <p class="uc-tag">[DOCS]</p>
+        <h3>Reports without the dread</h3>
+        <p class="uc-p">
+          The 34-page quarterly lands at 9:12, standup is at 9:30. Feed it in at 600 and be
+          the one who read it.
+        </p>
+        <div class="viz viz-bars" aria-hidden="true">
+          <div class="vb"><span>238 wpm</span><i style="--w:100%"></i><b>38 min</b></div>
+          <div class="vb hot"><span>600 wpm</span><i style="--w:40%"></i><b>15 min</b></div>
+        </div>
+      </article>
+
+      <article class="uc" data-reveal data-reveal-delay="0.07">
+        <p class="uc-tag">[STUDY]</p>
+        <h3>Revision on repeat</h3>
+        <p class="uc-p">
+          Second pass at half again the speed, third pass faster still. Repetition stops
+          being a chore when a chapter takes eleven minutes.
+        </p>
+        <div class="viz viz-bars" aria-hidden="true">
+          <div class="vb"><span>pass 1</span><i style="--w:50%"></i><b>300</b></div>
+          <div class="vb"><span>pass 2</span><i style="--w:75%"></i><b>450</b></div>
+          <div class="vb hot"><span>pass 3</span><i style="--w:100%"></i><b>600</b></div>
+        </div>
+      </article>
+
+      <article class="uc" data-reveal data-reveal-delay="0.14">
+        <p class="uc-tag">[PHONE]</p>
+        <h3>The commute</h3>
+        <p class="uc-p">
+          One thumb, one word, standing on a train. Install it as an app from the browser; it
+          picks up exactly where your desk left off.
+        </p>
+        <div class="viz viz-phone" aria-hidden="true">
+          <div class="frame">
+            <HeroReader words={COMMUTE_DEMO_WORDS} wpm={300} loopPauseMs={1600} bare />
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sec-head { margin-bottom: clamp(36px, 6vh, 56px); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .uc {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 24px 22px 22px;
+    min-height: 240px;
+    transition: border-color var(--t-std) var(--ease);
+  }
+  .uc:hover { border-color: var(--ink); }
+  .uc-tag {
+    margin: 0;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--accent);
+  }
+  .uc h3 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+  .uc-p { margin: 0; color: var(--dim); font-size: 13px; line-height: 1.7; }
+
+  .viz { margin-top: auto; padding-top: 18px; }
+
+  /* [PDF] page skeleton */
+  .viz-page { display: flex; flex-direction: column; gap: 6px; }
+  .viz-page i { display: block; height: 3px; background: var(--line); }
+  .viz-page i.hot { background: var(--accent); }
+  .viz-page i.short { width: 62%; }
+
+  /* [URL] the pile counts down to zero */
+  .viz-pile { display: flex; align-items: baseline; gap: 10px; }
+  .viz-pile b {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .viz-pile span {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  /* [EPUB] chapter ticks */
+  .viz-ch { display: flex; align-items: center; gap: 12px; }
+  .ticks { display: flex; gap: 4px; }
+  .ticks i { width: 9px; height: 9px; border: 1px solid var(--line); }
+  .ticks i.on { background: var(--accent); border-color: var(--accent); }
+  .viz-ch .lab {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  /* [DOCS] / [STUDY] labelled bars */
+  .viz-bars { display: flex; flex-direction: column; gap: 8px; }
+  .vb { display: grid; grid-template-columns: 7ch 1fr 6ch; align-items: center; gap: 10px; }
+  .vb span, .vb b {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+  .vb b { text-align: right; }
+  .vb i { display: block; height: 5px; width: var(--w); background: var(--line); }
+  .vb.hot i { background: var(--accent); }
+  .vb.hot span, .vb.hot b { color: var(--ink); }
+
+  /* [PHONE] pocket frame with a live bare reader */
+  .viz-phone { display: flex; justify-content: center; }
+  .frame {
+    width: min(150px, 100%);
+    border: 1px solid var(--line);
+    padding: 26px 8px;
+  }
+  .frame :global(.hr-word) { font-size: 15px; min-height: 1.3em; }
+
+  @media (max-width: 980px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .uc { min-height: 0; }
+  }
+</style>

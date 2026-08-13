@@ -1,0 +1,196 @@
+---
+// The auto-running reader — the product pitching itself. Plays a pre-computed
+// flick-core timeline with a requestAnimationFrame accumulator (never
+// setTimeout), the same discipline as the app. Purely presentational.
+//
+// Variants:
+//  - `bare`  drops the rails / progress / meter chrome (word only) for small
+//    vignettes like the phone frame in the use-cases grid.
+//  - `wait`  holds the stream until the page-load choreography fires
+//    `flick:hero-go` (with a timeout fallback so it can never stay frozen).
+import type { TimelineWord } from '../lib/types';
+
+interface Props {
+  words: TimelineWord[];
+  wpm?: number;
+  loopPauseMs?: number;
+  meter?: boolean;
+  bare?: boolean;
+  wait?: boolean;
+  class?: string;
+}
+
+const {
+  words,
+  wpm = 480,
+  loopPauseMs = 1400,
+  meter = false,
+  bare = false,
+  wait = false,
+  class: klass = '',
+} = Astro.props;
+---
+
+<div
+  class:list={['hr', klass]}
+  data-hero
+  data-words={JSON.stringify(words)}
+  data-wpm={wpm}
+  data-loop={loopPauseMs}
+  data-wait={wait ? 'true' : undefined}
+  aria-hidden="true"
+>
+  {!bare && <div class="hr-rail"><i></i></div>}
+  <div class="hr-word"><span class="hr-pre"></span><span class="hr-pv"></span><span class="hr-post"></span></div>
+  {!bare && <div class="hr-rail"><i></i></div>}
+  {!bare && <div class="hr-prog"><i></i></div>}
+  {meter && (
+    <div class="hr-meter">
+      <span class="hr-count">000 / 000</span>
+      <span class="hr-wpm"><b>{wpm}</b> WPM</span>
+    </div>
+  )}
+</div>
+
+<style>
+  .hr { display: flex; flex-direction: column; gap: 14px; width: 100%; user-select: none; }
+  .hr-rail { display: flex; align-items: center; justify-content: center; height: 1px; }
+  .hr-rail::before, .hr-rail::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+  .hr-rail i { width: 1px; height: 9px; background: var(--accent); flex: none; }
+  .hr-word {
+    text-align: center;
+    font-size: clamp(30px, 7vw, 52px);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.1;
+    min-height: 1.2em;
+    white-space: nowrap;
+  }
+  .hr-pv { color: var(--accent); }
+  .hr-prog { height: 2px; background: var(--line); }
+  .hr-prog i { display: block; height: 100%; width: 0; background: var(--accent); }
+  .hr-meter {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .hr-wpm b { color: var(--ink); font-weight: 700; }
+</style>
+
+<script>
+  import type { TimelineWord } from '../lib/types';
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const controllers: Array<() => void> = [];
+
+  function pad(n: number, w: number) {
+    return String(n).padStart(w, '0');
+  }
+
+  function run(el: HTMLElement) {
+    const words: TimelineWord[] = JSON.parse(el.dataset.words || '[]');
+    const wpm = Number(el.dataset.wpm || 480);
+    const loopPause = Number(el.dataset.loop || 1400);
+    if (words.length === 0) return;
+
+    const pre = el.querySelector<HTMLElement>('.hr-pre')!;
+    const pv = el.querySelector<HTMLElement>('.hr-pv')!;
+    const post = el.querySelector<HTMLElement>('.hr-post')!;
+    const prog = el.querySelector<HTMLElement>('.hr-prog i');
+    const count = el.querySelector<HTMLElement>('.hr-count');
+    const total = words.length;
+    const digits = Math.max(3, String(total).length);
+
+    let index = 0;
+    function paint() {
+      const [w, orp] = words[index];
+      pre.textContent = w.slice(0, orp);
+      pv.textContent = w.charAt(orp);
+      post.textContent = w.slice(orp + 1);
+      if (prog) prog.style.width = `${((index + 1) / total) * 100}%`;
+      if (count) count.textContent = `${pad(index + 1, digits)} / ${pad(total, digits)}`;
+    }
+    paint();
+
+    if (reduced) {
+      // a calm slideshow instead of the full-speed stream
+      const timer = window.setInterval(() => {
+        index = (index + 1) % total;
+        paint();
+      }, 1400);
+      controllers.push(() => window.clearInterval(timer));
+      return;
+    }
+
+    let last = 0;
+    let acc = 0;
+    let holdUntil = 0;
+    let frameId = 0;
+    let stopped = false;
+    const dur = (i: number) => words[i][2] * (60000 / wpm);
+
+    function frame(now: number) {
+      if (holdUntil > 0) {
+        if (now >= holdUntil) {
+          holdUntil = 0;
+          index = 0;
+          acc = 0;
+          paint();
+        }
+        last = now;
+        frameId = requestAnimationFrame(frame);
+        return;
+      }
+      acc += Math.min(now - last, 250);
+      last = now;
+      let d = dur(index);
+      while (acc >= d) {
+        acc -= d;
+        if (index + 1 >= total) {
+          holdUntil = now + loopPause;
+          break;
+        }
+        index += 1;
+        d = dur(index);
+      }
+      paint();
+      frameId = requestAnimationFrame(frame);
+    }
+
+    let started = false;
+    let fallback = 0;
+    const begin = () => {
+      if (started || stopped) return;
+      started = true;
+      window.clearTimeout(fallback);
+      window.removeEventListener('flick:hero-go', begin);
+      last = performance.now();
+      frameId = requestAnimationFrame(frame);
+    };
+    if ('wait' in el.dataset) {
+      // start on the choreography's beat — or after a beat, no matter what
+      window.addEventListener('flick:hero-go', begin, { once: true });
+      fallback = window.setTimeout(begin, 2600);
+    } else {
+      begin();
+    }
+    controllers.push(() => {
+      stopped = true;
+      window.clearTimeout(fallback);
+      window.removeEventListener('flick:hero-go', begin);
+      cancelAnimationFrame(frameId);
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-hero]').forEach(run);
+  window.addEventListener(
+    'pagehide',
+    () => {
+      for (const stop of controllers) stop();
+    },
+    { once: true }
+  );
+</script>

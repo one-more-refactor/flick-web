@@ -1,0 +1,134 @@
+---
+// The self-host door, at full size. The Plans section carries a one-line
+// version of this as a footnote; under the current positioning the person who
+// wants to run it themselves is a primary visitor, not an afterthought — so
+// they get a band, the real install line, and four facts they can check.
+import { REPO, SITE } from '../config';
+
+const FACTS: [string, string][] = [
+  ['AGPL-3.0', 'no CLA — inbound equals outbound, it can never be closed'],
+  ['0', 'external services: no Redis, no Postgres, no CDN, no telemetry'],
+  ['OIDC', 'bring your own identity provider — Authentik-tested'],
+  ['TUI', 'terminal client, same engine, same library'],
+];
+---
+
+<section id="selfhost" class="sh section">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <p class="sec-label">Host it yourself</p>
+      <h2 class="sec-h2">One binary. One SQLite file. Yours.</h2>
+      <p class="sec-lede">
+        The hosted app is the same code you can run on your own box — no crippled community
+        edition, nothing held back. Self-hosted flick has every feature, forever, and where
+        the hosted UI shows Pro, yours shows a link back to the repo.
+      </p>
+    </div>
+
+    <div class="cmd" data-reveal>
+      <pre><code>curl -fsSL {SITE}/install.sh | sh</code></pre>
+      <p class="cmd-n">
+        Docker or Podman Compose, a named volume for your library, re-run to upgrade. Or build
+        the binary yourself and drop it behind the reverse proxy you already run.
+      </p>
+    </div>
+
+    <div class="facts">
+      {
+        FACTS.map(([v, l], i) => (
+          <div class="fact" data-reveal data-reveal-delay={(i * 0.06).toFixed(2)}>
+            <b>{v}</b>
+            <span>{l}</span>
+          </div>
+        ))
+      }
+    </div>
+
+    <p class="pile" data-reveal>
+      Already running Wallabag, Readeck, Karakeep or Calibre? You've solved storing the pile.
+      flick is the part that reads it to you.
+    </p>
+
+    <div class="row" data-reveal>
+      <a class="btn" href={`${REPO}#self-host-quickstart`} target="_blank" rel="noopener"
+        >Read the docs <span class="ar">→</span></a
+      >
+      <a class="btn-ghost" href={REPO} target="_blank" rel="noopener">source on GitHub ↗</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sec-head { margin-bottom: clamp(30px, 5vh, 46px); }
+
+  .cmd {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 22px;
+  }
+  .cmd pre {
+    margin: 0;
+    overflow-x: auto;
+    font-size: clamp(12px, 1.6vw, 15px);
+    line-height: 1.6;
+  }
+  .cmd code { color: var(--ink); }
+  .cmd-n {
+    margin: 14px 0 0;
+    color: var(--dim);
+    font-size: 12px;
+    line-height: 1.8;
+    max-width: 68ch;
+  }
+
+  .facts {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  .fact {
+    background: var(--bg);
+    padding: 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .fact b {
+    font-size: clamp(20px, 2.6vw, 28px);
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .fact span {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--dim);
+    line-height: 1.7;
+  }
+
+  .pile {
+    margin: 26px 0 0;
+    max-width: 68ch;
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .row {
+    margin-top: 26px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 860px) {
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 460px) {
+    .facts { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

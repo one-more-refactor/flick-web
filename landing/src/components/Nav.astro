@@ -1,0 +1,106 @@
+---
+// Sticky top bar. The 2px hairline underneath is the page's reading progress —
+// the same accent progress bar the reader draws under every text.
+import { APP_URL, REPO } from '../config';
+---
+
+<header class="top hv" data-nav>
+  <div class="wrap top-row">
+    <a class="mark" href="/">FLICK<span class="cur">_</span></a>
+    <nav class="nav" aria-label="Main">
+      <a class="link hide-s" href="/#how">How it works</a>
+      <a class="link hide-s" href="/#uses">Use cases</a>
+      <a class="link hide-s" href="/#selfhost">Self-host</a>
+      <a class="link hide-s" href="/science/">The research</a>
+      <a class="link hide-s" href="/#plans">Plans</a>
+      <a class="link hide-m" href={REPO} target="_blank" rel="noopener">GitHub <span class="x">↗</span></a>
+      <button class="mode" data-mode-toggle aria-label="Switch light / dark mode" title="Switch light / dark">◐</button>
+      <a class="cta" href={APP_URL}>Open flick <span class="ar">→</span></a>
+    </nav>
+  </div>
+  <div class="prog"><i data-nav-prog></i></div>
+</header>
+
+<style>
+  .top {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    transition: background var(--t-flick) var(--ease);
+  }
+  .top-row { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .mark { font-size: 15px; font-weight: 700; letter-spacing: 0.22em; }
+  .cur { color: var(--accent); }
+  .nav { display: flex; align-items: center; gap: 22px; }
+  .link {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dim);
+    transition: color var(--t-std) var(--ease);
+  }
+  .link:hover { color: var(--ink); }
+  .link .x { color: var(--dim); }
+  .mode {
+    font-size: 15px;
+    line-height: 1;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    color: var(--dim);
+    transition: color var(--t-std) var(--ease), border-color var(--t-std) var(--ease);
+  }
+  .mode:hover { color: var(--ink); border-color: var(--ink); }
+  .cta {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    border: 1px solid var(--ink);
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    transition:
+      background var(--t-std) var(--ease),
+      color var(--t-std) var(--ease),
+      border-color var(--t-std) var(--ease);
+  }
+  .cta:hover { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+
+  .prog { height: 2px; margin-top: -2px; position: relative; }
+  .prog i {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  @media (max-width: 760px) {
+    .hide-s { display: none; }
+  }
+  @media (max-width: 480px) {
+    .hide-m { display: none; }
+  }
+</style>
+
+<script>
+  // mode toggle — shared key with the app, so the look follows the reader
+  document.querySelectorAll<HTMLElement>('[data-mode-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const r = document.documentElement;
+      const next = r.getAttribute('data-mode') === 'dark' ? 'light' : 'dark';
+      r.setAttribute('data-mode', next);
+      try {
+        localStorage.setItem('flick.mode', next);
+      } catch {
+        /* private mode */
+      }
+    });
+  });
+</script>
