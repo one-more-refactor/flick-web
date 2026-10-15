@@ -1,4 +1,11 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/brand/mark-dark.svg">
+  <img src=".github/brand/mark-light.svg" alt="" width="32" height="32">
+</picture>
+
 # flick-web
+
+<img src=".github/brand/kind-app.svg" alt="kind: app" height="20">&nbsp;<img src=".github/brand/status-live.svg" alt="status: live" height="20">
 
 [![ci](https://github.com/one-more-refactor/flick-web/actions/workflows/ci.yml/badge.svg)](https://github.com/one-more-refactor/flick-web/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-web/releases/latest)
@@ -67,3 +74,13 @@ Releases: bump `package.json`, tag `vX.Y.Z`, push the tag — CI verifies the ve
 ## License
 
 [AGPL-3.0-only](LICENSE).
+
+---
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/brand/lockup-dark.svg">
+  <img src=".github/brand/lockup-light.svg" alt="one more" height="20">
+</picture>
+
+part of [one more](https://github.com/one-more-refactor) — small tools that
+keep their data in plain files and never ask you to make an account.
