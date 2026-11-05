@@ -287,6 +287,13 @@ const DICT: Dict = {
   pause: { en: 'Pause', de: 'Pause' },
   play: { en: 'Play', de: 'Start' },
   replay: { en: 'Replay', de: 'Nochmal' },
+  // reader, screen-reader only
+  sr_playing: { en: 'Playing', de: 'Läuft' },
+  sr_paused: { en: 'Paused', de: 'Pausiert' },
+  sr_finished: { en: 'Finished', de: 'Fertig' },
+  sr_word_of: { en: 'word {n} of {total}', de: 'Wort {n} von {total}' },
+  sr_progress: { en: 'Reading progress', de: 'Lesefortschritt' },
+  sr_wpm: { en: 'words per minute', de: 'Wörter pro Minute' },
   reader_hint_kbd: { en: 'space play/pause · ←→ sentence · esc back', de: 'Leertaste Start/Pause · ←→ Satz · Esc zurück' },
   reader_hint_touch: { en: 'tap sides for sentence · center play/pause', de: 'Seiten tippen: Satz · Mitte: Start/Pause' },
 
@@ -489,6 +496,16 @@ class I18nState {
   lang = $state<Lang>(storedLang());
   private synced = false;
 
+  constructor() {
+    this.stamp();
+  }
+
+  /** Mirror the resolved language onto <html lang> so screen readers pick
+   *  the right voice and pronunciation rules (WCAG 3.1.1). */
+  private stamp(): void {
+    document.documentElement.lang = this.resolved;
+  }
+
   get resolved(): 'en' | 'de' | 'es' {
     return this.lang === 'auto' ? browserLang() : this.lang;
   }
@@ -496,6 +513,7 @@ class I18nState {
   setLang(lang: Lang): void {
     this.lang = lang;
     localStorage.setItem(LANG_KEY, lang);
+    this.stamp();
     if (this.synced) queueSettings({ lang }, 800);
   }
 
@@ -503,6 +521,7 @@ class I18nState {
     this.synced = true;
     this.lang = lang;
     localStorage.setItem(LANG_KEY, lang);
+    this.stamp();
   }
 
   detach(): void {

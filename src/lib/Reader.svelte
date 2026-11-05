@@ -63,6 +63,12 @@
   });
   let custOpen = $state(false);
 
+  // ---- screen-reader status (polite live region): play state only, never
+  // the stream of words — a per-word announcement would drown the reader.
+  let announce = $state('');
+  const wordOf = () =>
+    t('sr_word_of').replace('{n}', String(index + 1)).replace('{total}', String(total));
+
   // ---- zen mode (v0.6): chrome fades, the word remains ----
   let zen = $state(false);
 
@@ -132,6 +138,7 @@
     if (sessionStart === 0) sessionStart = Date.now();
     rampMs = 0; // ease in from 60% on every (re)start
     playing = true;
+    announce = t('sr_playing');
     last = performance.now();
     raf = requestAnimationFrame(frame);
   }
@@ -140,6 +147,7 @@
     if (!playing) return;
     playing = false;
     cancelAnimationFrame(raf);
+    announce = `${t('sr_paused')} · ${wordOf()}`;
     void savePosition();
   }
 
@@ -152,6 +160,7 @@
     playing = false;
     finished = true;
     cancelAnimationFrame(raf);
+    announce = t('sr_finished');
     void savePosition();
   }
 
@@ -429,10 +438,18 @@
       </div>
     {/if}
 
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- Pointer scrubbing is a shortcut; keyboard users seek by sentence
+         (←/→), so this exposes as a read-only progressbar. -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="progress scrub"
       class:scrubbing
+      role="progressbar"
+      aria-label={t('sr_progress')}
+      aria-valuemin={total === 0 ? 0 : 1}
+      aria-valuemax={total}
+      aria-valuenow={total === 0 ? 0 : index + 1}
+      aria-valuetext={wordOf()}
       bind:this={scrubEl}
       onpointerdown={scrubStart}
       onpointermove={scrubMove}
@@ -476,6 +493,7 @@
             step="25"
             bind:value={wpm}
             aria-label="Words per minute"
+            aria-valuetext="{wpm} {t('sr_wpm')}"
             onpointerdown={() => (sliding = true)}
             onpointerup={() => (sliding = false)}
             onpointercancel={() => (sliding = false)}
@@ -550,6 +568,8 @@
         {/if}
       </div>
     </div>
+
+    <span class="sr-only" role="status" aria-live="polite">{announce}</span>
 
     <div class="rhint">
       <span class="kbd-only">{t('reader_hint_kbd')}</span>
